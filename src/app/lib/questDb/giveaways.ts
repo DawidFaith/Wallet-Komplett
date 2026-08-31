@@ -252,6 +252,44 @@ export async function createGiveawayCampaign(
   }
 }
 
+/**
+ * Fügt einer bereits laufenden Kampagne nachträglich eine weitere Plattform hinzu —
+ * für Artists, die nicht alle Plattformen gleichzeitig posten können und z.B. erst
+ * Instagram und einen Tag später TikTok/Facebook/YouTube nachreichen wollen.
+ * Ablehnung, wenn die Kampagne nicht (mehr) aktiv ist, nicht dem Artist gehört, oder
+ * diese Plattform bereits Teil der Kampagne ist (ein Slot pro Plattform, UNIQUE-Constraint).
+ */
+export async function addGiveawayCampaignPlatform(
+  campaignId: string,
+  artistWallet: string,
+  platform: GiveawayPlatform,
+  postUrl: string,
+  mediaId: string | null,
+  premiereStartsAt: string | null = null,
+): Promise<{ success: true } | { error: string }> {
+  await ensureTables();
+  const sql = getDb();
+
+  const rows = await sql`
+    SELECT id FROM giveaway_campaigns
+    WHERE id = ${campaignId} AND artist_wallet = ${artistWallet.toLowerCase()} AND status = 'active'
+    LIMIT 1
+  `;
+  if (rows.length === 0) return { error: 'Gewinnspiel nicht gefunden oder nicht mehr aktiv.' };
+
+  const existing = await sql`
+    SELECT 1 FROM giveaway_campaign_platforms WHERE campaign_id = ${campaignId} AND platform = ${platform} LIMIT 1
+  `;
+  if (existing.length > 0) return { error: 'Diese Plattform ist bereits Teil dieses Gewinnspiels.' };
+
+  const pid = `gwp_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+  await sql`
+    INSERT INTO giveaway_campaign_platforms (id, campaign_id, platform, post_url, media_id, premiere_starts_at)
+    VALUES (${pid}, ${campaignId}, ${platform}, ${postUrl}, ${mediaId}, ${premiereStartsAt})
+  `;
+  return { success: true };
+}
+
 export async function getGiveawayCampaignsByArtist(artistWallet: string): Promise<GiveawayCampaign[]> {
   await ensureTables();
   const sql = getDb();

@@ -149,6 +149,17 @@ function GiveawaysPanel({ artistWallet, artistName }: { artistWallet: string; ar
   const [premiereStartsAt, setPremiereStartsAt] = useState('');
   const [premiereLoading, setPremiereLoading]   = useState(false);
 
+  // "Plattform nachträglich hinzufügen" — für laufende Kampagnen, bei denen der
+  // Artist nicht alle Plattformen gleichzeitig posten kann (z.B. erst Instagram,
+  // TikTok/Facebook/YouTube dann einen Tag später).
+  const [addPlatformOpenFor, setAddPlatformOpenFor] = useState<string | null>(null);
+  const [addPlatformSelected, setAddPlatformSelected] = useState<GiveawayPlatformKey | ''>('');
+  const [addPlatformUrl, setAddPlatformUrl] = useState('');
+  const [addPlatformPremiereEnabled, setAddPlatformPremiereEnabled] = useState(false);
+  const [addPlatformPremiereStartsAt, setAddPlatformPremiereStartsAt] = useState('');
+  const [addPlatformSubmitting, setAddPlatformSubmitting] = useState(false);
+  const [addPlatformError, setAddPlatformError] = useState('');
+
   const load = useCallback(async () => {
     if (!artistWallet) return;
     setLoading(true);
@@ -293,6 +304,41 @@ function GiveawaysPanel({ artistWallet, artistName }: { artistWallet: string; ar
     if (!confirm(t('gw.confirmDelete', lang))) return;
     await fetch(`/api/giveaways/campaigns/${id}?artistWallet=${artistWallet}`, { method: 'DELETE' });
     await load();
+  };
+
+  const openAddPlatform = (campaignId: string) => {
+    setAddPlatformOpenFor(prev => prev === campaignId ? null : campaignId);
+    setAddPlatformSelected(''); setAddPlatformUrl('');
+    setAddPlatformPremiereEnabled(false); setAddPlatformPremiereStartsAt('');
+    setAddPlatformError('');
+  };
+
+  const handleAddPlatform = async (campaignId: string) => {
+    if (!addPlatformSelected || !addPlatformUrl.trim()) return;
+    setAddPlatformSubmitting(true);
+    setAddPlatformError('');
+    try {
+      const res = await fetch(`/api/giveaways/campaigns/${campaignId}/platforms`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          artistWallet,
+          platform: addPlatformSelected,
+          postUrl: addPlatformUrl.trim(),
+          premiereStartsAt: addPlatformSelected === 'youtube' && addPlatformPremiereEnabled && addPlatformPremiereStartsAt
+            ? new Date(addPlatformPremiereStartsAt).toISOString()
+            : null,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) { setAddPlatformError(data.error ?? t('gw.errGeneric', lang)); return; }
+      setAddPlatformOpenFor(null);
+      await load();
+    } catch {
+      setAddPlatformError(t('gw.errNetwork', lang));
+    } finally {
+      setAddPlatformSubmitting(false);
+    }
   };
 
   // Permanenter Link, immer gleich — zeigt automatisch die neueste Kampagne dieses
@@ -600,7 +646,67 @@ function GiveawaysPanel({ artistWallet, artistName }: { artistWallet: string; ar
                 </div>
                 <div className="flex items-center gap-2 mb-2">
                   {c.platforms.map(p => <span key={p.platform}>{GIVEAWAY_PLATFORM_META[p.platform]?.icon}</span>)}
+                  {c.status === 'active' && GIVEAWAY_PLATFORMS.some(p => (isDawidFaith || !p.endsWith('_polska')) && !c.platforms.some(cp => cp.platform === p)) && (
+                    <button
+                      onClick={() => openAddPlatform(c.id)}
+                      className="flex items-center gap-1 text-[10px] text-amber-400 hover:text-amber-300 font-semibold ml-1"
+                    >
+                      <FaPlus size={8} /> {t('gw.addPlatform', lang)}
+                    </button>
+                  )}
                 </div>
+
+                {addPlatformOpenFor === c.id && (
+                  <div className="bg-white/[0.03] border border-white/[0.06] rounded-xl p-3 mb-3 space-y-2">
+                    <select
+                      value={addPlatformSelected}
+                      onChange={e => { setAddPlatformSelected(e.target.value as GiveawayPlatformKey); setAddPlatformUrl(''); setAddPlatformError(''); }}
+                      className="w-full bg-white/[0.04] border border-white/[0.08] rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-amber-500/60"
+                    >
+                      <option value="">{t('gw.selectPlatform', lang)}</option>
+                      {GIVEAWAY_PLATFORMS.filter(p => (isDawidFaith || !p.endsWith('_polska')) && !c.platforms.some(cp => cp.platform === p)).map(p => (
+                        <option key={p} value={p}>{GIVEAWAY_PLATFORM_META[p].label}</option>
+                      ))}
+                    </select>
+                    {addPlatformSelected && (
+                      <>
+                        <input
+                          value={addPlatformUrl}
+                          onChange={e => setAddPlatformUrl(e.target.value)}
+                          placeholder={t('gw.manualLinkPlaceholder', lang)}
+                          className="w-full bg-white/[0.04] border border-white/[0.08] rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-amber-500/60"
+                        />
+                        {addPlatformSelected === 'youtube' && (
+                          <div className="bg-white/[0.03] border border-white/[0.06] rounded-lg p-2 space-y-1.5">
+                            <label className="flex items-center gap-2 text-[11px] font-semibold text-zinc-200 cursor-pointer">
+                              <input
+                                type="checkbox" checked={addPlatformPremiereEnabled}
+                                onChange={e => { setAddPlatformPremiereEnabled(e.target.checked); if (!e.target.checked) setAddPlatformPremiereStartsAt(''); }}
+                              />
+                              🔴 {t('gw.premiereLabel', lang)}
+                            </label>
+                            {addPlatformPremiereEnabled && (
+                              <input
+                                type="datetime-local" value={addPlatformPremiereStartsAt}
+                                onChange={e => setAddPlatformPremiereStartsAt(e.target.value)}
+                                className="w-full bg-white/[0.04] border border-white/[0.08] rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-amber-500/60"
+                              />
+                            )}
+                          </div>
+                        )}
+                        {addPlatformError && <p className="text-red-400 text-[10px]">{addPlatformError}</p>}
+                        <button
+                          onClick={() => handleAddPlatform(c.id)}
+                          disabled={addPlatformSubmitting || !addPlatformUrl.trim()}
+                          className="w-full bg-amber-500 hover:bg-amber-400 disabled:bg-zinc-800 disabled:text-zinc-500 text-black font-black rounded-lg py-2 text-xs transition-all"
+                        >
+                          {addPlatformSubmitting ? t('gw.creatingCampaign', lang) : t('gw.addPlatformSubmit', lang)}
+                        </button>
+                      </>
+                    )}
+                  </div>
+                )}
+
                 <div className="mb-3">
                   <p className="text-zinc-500 text-xs">
                     {tFmt('gw.winnersProgress', lang, { count: c.winnerCount, max: c.maxWinners, reward: c.creditReward })}

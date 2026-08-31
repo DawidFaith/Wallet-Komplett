@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getUserProfile, createGiveawayCampaign, getGiveawayCampaignsByArtist, type GiveawayPlatform } from '../../../lib/questDb';
 import { requireOwnWallet } from '../../../lib/apiAuth';
-import { extractTiktokVideoId, extractYoutubeVideoId } from '../../../lib/giveawayVerify';
+import { resolveGiveawayPlatformEntry } from '../../../lib/giveawayPlatformResolve';
 
 export const dynamic = 'force-dynamic';
 export const fetchCache = 'force-no-store';
@@ -57,41 +57,15 @@ export async function POST(req: NextRequest) {
   const resolvedPlatforms: { platform: GiveawayPlatform; postUrl: string; mediaId: string | null; premiereStartsAt: string | null }[] = [];
   for (const p of platforms) {
     if (!VALID_PLATFORMS.includes(p.platform as GiveawayPlatform) || !p.postUrl?.trim()) continue;
-    const platform = p.platform as GiveawayPlatform;
-    const postUrl = p.postUrl.trim();
     // Der Video-Picker im Frontend liefert die Media-ID bereits direkt aus den
     // available-media Endpoints mit — nur wenn der Artist stattdessen einen Link
     // manuell eingefügt hat, wird sie hier serverseitig nachträglich aufgelöst.
-    let mediaId: string | null = p.mediaId?.trim() || null;
-
-    if (!mediaId && (platform === 'tiktok' || platform === 'tiktok_polska')) {
-      mediaId = extractTiktokVideoId(postUrl);
-    } else if (!mediaId && platform === 'youtube') {
-      mediaId = extractYoutubeVideoId(postUrl);
-    } else if (!mediaId && (platform === 'instagram' || platform === 'instagram_polska')) {
-      try {
-        const res = await fetch(`${req.nextUrl.origin}/api/instagram-quests/resolve-reel?url=${encodeURIComponent(postUrl)}`);
-        if (res.ok) {
-          const data = await res.json();
-          mediaId = data.mediaId ?? null;
-        }
-      } catch { /* Resolution fehlgeschlagen, mediaId bleibt null */ }
-      if (!mediaId) {
-        return NextResponse.json({ error: `Instagram-Link konnte nicht aufgelöst werden: ${postUrl}` }, { status: 400 });
-      }
-    }
-    // Premiere-Zeitfenster: nur für YouTube relevant, sonst ignoriert.
-    let premiereStartsAt: string | null = null;
-    if (platform === 'youtube' && p.premiereStartsAt?.trim()) {
-      const parsed = new Date(p.premiereStartsAt);
-      if (isNaN(parsed.getTime())) {
-        return NextResponse.json({ error: 'Ungültiger Premiere-Zeitstempel.' }, { status: 400 });
-      }
-      premiereStartsAt = parsed.toISOString();
-    }
-
     // facebook ohne mediaId: wird erst zur Verifikationszeit aufgelöst (Page-ID-Kombination nötig)
-    resolvedPlatforms.push({ platform, postUrl, mediaId, premiereStartsAt });
+    const resolved = await resolveGiveawayPlatformEntry(req.nextUrl.origin, {
+      platform: p.platform as GiveawayPlatform, postUrl: p.postUrl, mediaId: p.mediaId ?? null, premiereStartsAt: p.premiereStartsAt ?? null,
+    });
+    if ('error' in resolved) return NextResponse.json({ error: resolved.error }, { status: 400 });
+    resolvedPlatforms.push(resolved);
   }
 
   if (resolvedPlatforms.length === 0) {
