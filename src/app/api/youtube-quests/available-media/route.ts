@@ -25,24 +25,39 @@ export async function GET(req: NextRequest) {
       );
     }
 
-    const searchRes = await fetch(
-      `https://www.googleapis.com/youtube/v3/search?part=snippet&channelId=${encodeURIComponent(binding.channelId)}&maxResults=25&order=date&type=video&key=${YT_API_KEY}`,
+    // channels.list → Uploads-Playlist-ID, dann playlistItems.list statt search.list:
+    // search.list hat eine eigene, separat indizierte Suche mit oft stunden- bis
+    // teils tageslanger Verzögerung für frisch hochgeladene Videos. Die automatische
+    // "Uploads"-Playlist jedes Kanals ist dagegen sofort aktuell (kein Suchindex,
+    // sondern eine direkte Liste), deshalb erscheinen neue Videos hier sofort.
+    const channelRes = await fetch(
+      `https://www.googleapis.com/youtube/v3/channels?part=contentDetails&id=${encodeURIComponent(binding.channelId)}&key=${YT_API_KEY}`,
       { cache: 'no-store' }
     );
-    const searchData = await searchRes.json();
+    const channelData = await channelRes.json();
+    const uploadsPlaylistId: string | undefined = channelData?.items?.[0]?.contentDetails?.relatedPlaylists?.uploads;
+    if (!uploadsPlaylistId) {
+      return NextResponse.json({ error: 'Uploads-Playlist des Kanals konnte nicht ermittelt werden.' }, { status: 500 });
+    }
+
+    const playlistRes = await fetch(
+      `https://www.googleapis.com/youtube/v3/playlistItems?part=snippet&playlistId=${encodeURIComponent(uploadsPlaylistId)}&maxResults=25&key=${YT_API_KEY}`,
+      { cache: 'no-store' }
+    );
+    const playlistData = await playlistRes.json();
 
     const items: Array<{
-      id?: { videoId?: string };
       snippet?: {
         title?: string;
         publishedAt?: string;
+        resourceId?: { videoId?: string };
         thumbnails?: { medium?: { url?: string }; high?: { url?: string }; default?: { url?: string } };
       };
-    }> = Array.isArray(searchData?.items) ? searchData.items : [];
+    }> = Array.isArray(playlistData?.items) ? playlistData.items : [];
 
     const media = items
       .map((item) => {
-        const videoId = item.id?.videoId;
+        const videoId = item.snippet?.resourceId?.videoId;
         if (!videoId) return null;
         const title = item.snippet?.title ?? '';
         const thumbnail =
