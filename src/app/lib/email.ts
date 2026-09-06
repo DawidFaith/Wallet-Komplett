@@ -262,6 +262,65 @@ export async function sendWelcomeEmail(params: { toEmail: string; lang: Lang }):
   });
 }
 
+const QUEST_ANNOUNCEMENT_STRINGS: Record<Lang, {
+  subject: string;
+  heading: string;
+  body: string;
+  button: string;
+  unsubscribeText: string;
+}> = {
+  de: {
+    subject: '[D.FAITH] Neue Quests sind verfügbar! 🎯',
+    heading: 'Neue Quests warten auf dich! 🎯',
+    body: 'Deine Lieblingskünstler haben neue Quests veröffentlicht — schließe sie ab und verdiene dir dafür <b>D.FAITH Credits</b>, die du gegen Token oder exklusive NFTs eintauschen kannst.',
+    button: 'Quests ansehen',
+    unsubscribeText: 'Möchtest du keine Ankündigungs-E-Mails mehr erhalten?',
+  },
+  en: {
+    subject: '[D.FAITH] New quests are available! 🎯',
+    heading: 'New quests are waiting for you! 🎯',
+    body: 'Your favorite artists have published new quests — complete them to earn <b>D.FAITH Credits</b>, which you can exchange for tokens or exclusive NFTs.',
+    button: 'View quests',
+    unsubscribeText: 'Don\'t want to receive announcement emails anymore?',
+  },
+  pl: {
+    subject: '[D.FAITH] Nowe questy są dostępne! 🎯',
+    heading: 'Nowe questy czekają na Ciebie! 🎯',
+    body: 'Twoi ulubieni artyści opublikowali nowe questy — wykonaj je i zdobądź <b>kredyty D.FAITH</b>, które możesz wymienić na tokeny lub ekskluzywne NFT.',
+    button: 'Zobacz questy',
+    unsubscribeText: 'Nie chcesz już otrzymywać e-maili z ogłoszeniami?',
+  },
+};
+
+/** Ankündigungs-Mail "neue Quests verfügbar" — manuell vom Admin an alle Nutzer ausgelöst (siehe questAnnouncementEmail.ts). */
+export async function sendNewQuestsAnnouncementEmail(params: { toEmail: string; lang: Lang }): Promise<void> {
+  if (await isUnsubscribed(params.toEmail)) {
+    console.log('[email] Empfänger hat sich abgemeldet – Quest-Ankündigung übersprungen:', params.toEmail);
+    return;
+  }
+  const s = QUEST_ANNOUNCEMENT_STRINGS[params.lang];
+  const unsubToken = generateUnsubscribeToken(params.toEmail);
+  const unsubUrl = `${APP_URL}/api/unsubscribe?email=${encodeURIComponent(params.toEmail)}&token=${unsubToken}&lang=${params.lang}`;
+  await sendMail({
+    to: params.toEmail,
+    fromName: 'D.FAITH App',
+    subject: s.subject,
+    html: `
+      <h2>${s.heading}</h2>
+      <p>${s.body}</p>
+      <p>
+        <a href="${APP_URL}" style="background:#f59e0b;color:#000;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:bold;font-size:16px;">
+          ${s.button}
+        </a>
+      </p>
+      <hr style="margin-top:32px;border:none;border-top:1px solid #333;"/>
+      <p style="color:#666;font-size:11px;margin-top:12px;">
+        ${s.unsubscribeText} <a href="${unsubUrl}" style="color:#888;">${params.lang === 'en' ? 'Unsubscribe' : params.lang === 'pl' ? 'Wypisz się' : 'Abmelden'}</a>
+      </p>
+    `,
+  });
+}
+
 const GIVEAWAY_EMAIL_LOCALE: Record<Lang, string> = { de: 'de-DE', en: 'en-US', pl: 'pl-PL' };
 
 const GIVEAWAY_EMAIL_STRINGS: Record<Lang, {

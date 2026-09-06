@@ -49,6 +49,8 @@ export default function AdminPage() {
   const [error, setError] = useState('');
   const [sendingWelcome, setSendingWelcome] = useState(false);
   const [welcomeMsg, setWelcomeMsg] = useState('');
+  const [sendingQuestAnnounce, setSendingQuestAnnounce] = useState(false);
+  const [questAnnounceMsg, setQuestAnnounceMsg] = useState('');
   const [search, setSearch] = useState('');
   const [filterArtist, setFilterArtist] = useState<'all' | 'artist' | 'fan'>('all');
   const [toggling, setToggling] = useState<string | null>(null);
@@ -469,6 +471,37 @@ export default function AdminPage() {
               className="shrink-0 px-3 py-1.5 rounded-lg text-xs font-semibold bg-amber-700/60 hover:bg-amber-600 text-amber-200 disabled:opacity-50 transition-colors border border-amber-700/40"
             >
               {sendingWelcome ? 'Sendet…' : 'Willkommensmail senden'}
+            </button>
+          </div>
+
+          {/* Quest-Ankündigung */}
+          <div className="flex items-center gap-3 mb-4 p-3 bg-zinc-900 border border-zinc-800 rounded-xl">
+            <div className="flex-1 text-xs text-zinc-400">
+              {questAnnounceMsg || '"Neue Quests verfügbar"-Mail an ALLE registrierten Nutzer senden (in ihrer gespeicherten Sprache, Abgemeldete übersprungen).'}
+            </div>
+            <button
+              onClick={async () => {
+                if (!confirm('Mail "Neue Quests verfügbar" wirklich an ALLE registrierten Nutzer senden?')) return;
+                setSendingQuestAnnounce(true);
+                setQuestAnnounceMsg('');
+                try {
+                  const res = await fetch('/api/admin/send-quest-announcement', {
+                    method: 'POST',
+                    headers: { 'x-admin-secret': secret },
+                  });
+                  const data = await res.json();
+                  if (!res.ok) throw new Error(data.error ?? 'Fehler');
+                  setQuestAnnounceMsg(`✓ ${data.sent} gesendet, ${data.skippedNoEmail} ohne E-Mail übersprungen (von ${data.total} Nutzern).`);
+                } catch (e) {
+                  setQuestAnnounceMsg(e instanceof Error ? e.message : 'Fehler');
+                } finally {
+                  setSendingQuestAnnounce(false);
+                }
+              }}
+              disabled={sendingQuestAnnounce}
+              className="shrink-0 px-3 py-1.5 rounded-lg text-xs font-semibold bg-amber-700/60 hover:bg-amber-600 text-amber-200 disabled:opacity-50 transition-colors border border-amber-700/40"
+            >
+              {sendingQuestAnnounce ? 'Sendet…' : 'Quest-Ankündigung senden'}
             </button>
           </div>
 
