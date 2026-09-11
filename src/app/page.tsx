@@ -123,7 +123,7 @@ export default function LandingPage() {
           <Image src="/D.FAITH.png" alt="" width={24} height={24} className="rounded-lg" priority />
           <div className="leading-none">
             <div className="text-[11px] font-black tracking-[0.3em] uppercase text-white">D.FAITH</div>
-            <div className="text-[9px] font-bold tracking-[0.25em] uppercase text-white/30 mt-px">Ecosystem</div>
+            <div className="text-[9px] font-bold tracking-[0.25em] uppercase text-white/50 mt-px">Ecosystem</div>
           </div>
         </div>
         <div className="flex items-center gap-3">
@@ -154,7 +154,7 @@ export default function LandingPage() {
             )}
           </div>
           <SignInButton mode="modal">
-            <button className="text-[11px] font-bold tracking-[0.2em] uppercase text-zinc-600 hover:text-amber-400 transition-colors">
+            <button className="text-[11px] font-bold tracking-[0.2em] uppercase text-zinc-400 hover:text-amber-400 transition-colors">
               {t('landing.login', language)}
             </button>
           </SignInButton>
@@ -198,19 +198,19 @@ export default function LandingPage() {
 
         {/* Content */}
         <div className="flex flex-col flex-1 px-6 py-8">
-          <p className="text-sm text-zinc-500 leading-relaxed mb-1 max-w-sm">
+          <p className="text-sm text-zinc-400 leading-relaxed mb-1 max-w-sm">
             {t('landing.sub', language)}
           </p>
-          <p className="text-xs text-zinc-700 font-medium tracking-widest mb-8">— Dawid Faith</p>
+          <p className="text-xs text-zinc-500 font-medium tracking-widest mb-8">— Dawid Faith</p>
 
           {artists.length > 0 && (
             <div className="mb-8">
               <div className="flex items-center gap-2 mb-3">
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                <span className="text-[9px] font-black tracking-[0.35em] uppercase text-zinc-500">{t('landing.activeArtists', language)}</span>
+                <span className="text-[9px] font-black tracking-[0.35em] uppercase text-zinc-400">{t('landing.activeArtists', language)}</span>
                 {totalQuests > 0 && (
                   <>
-                    <span className="text-zinc-800">·</span>
+                    <span className="text-zinc-600">·</span>
                     <span className="text-[9px] font-black tracking-[0.2em] uppercase text-amber-500">{totalQuests} {t('landing.open', language)}</span>
                   </>
                 )}
@@ -222,7 +222,7 @@ export default function LandingPage() {
                       <Image src={a.picture} alt={a.name} width={40} height={40} className="w-10 h-10 rounded-full object-cover shrink-0" />
                     ) : (
                       <div className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center shrink-0">
-                        <FaMusic size={11} className="text-zinc-600" />
+                        <FaMusic size={11} className="text-zinc-400" />
                       </div>
                     )}
                     <span className="text-[9px] font-semibold text-zinc-400 truncate max-w-[60px] text-center">{a.name}</span>
@@ -239,7 +239,7 @@ export default function LandingPage() {
 
           {/* Mobile Feature-Tabs */}
           <div className="mb-8">
-            <p className="text-[11px] text-zinc-600 leading-relaxed mb-3">{t('landing.roleHint', language)}</p>
+            <p className="text-[11px] text-zinc-400 leading-relaxed mb-3">{t('landing.roleHint', language)}</p>
             <div className="flex gap-6 border-b border-white/[0.07] mb-6">
               {(['fan', 'artist'] as const).map((tabVal) => (
                 <button
@@ -248,7 +248,7 @@ export default function LandingPage() {
                   className={`pb-3 text-[11px] font-black tracking-[0.25em] uppercase border-b-2 transition-all -mb-px ${
                     tab === tabVal
                       ? 'border-amber-400 text-white'
-                      : 'border-transparent text-zinc-600 hover:text-zinc-400'
+                      : 'border-transparent text-zinc-400 hover:text-zinc-200'
                   }`}
                 >
                   {tabVal === 'fan' ? t('landing.forFans', language) : t('landing.forArtists', language)}
@@ -263,7 +263,7 @@ export default function LandingPage() {
                     <span className="text-[10px] font-black text-amber-400/40 w-6 shrink-0 pt-0.5">{f.n}</span>
                     <div>
                       <p className="text-[14px] font-bold text-white mb-1">{f.title}</p>
-                      <p className="text-[12px] text-zinc-500 leading-relaxed">{f.desc}</p>
+                      <p className="text-[12px] text-zinc-400 leading-relaxed">{f.desc}</p>
                     </div>
                   </div>
                 ))}
@@ -277,24 +277,24 @@ export default function LandingPage() {
                         <span className="text-[10px] font-black text-amber-400/40 w-6 shrink-0 pt-0.5">{f.n}</span>
                         <div>
                           <p className="text-[14px] font-bold text-white mb-1">{f.title}</p>
-                          <p className="text-[12px] text-zinc-500 leading-relaxed">{f.desc}</p>
+                          <p className="text-[12px] text-zinc-400 leading-relaxed">{f.desc}</p>
                         </div>
                       </div>
                     ))}
                     <div className="space-y-2.5 pt-2">
                       <div>
-                        <label className="text-[9px] font-black tracking-[0.3em] uppercase text-zinc-700 mb-1.5 block">
+                        <label className="text-[9px] font-black tracking-[0.3em] uppercase text-zinc-500 mb-1.5 block">
                           {t('landing.form.nameLabel', language)}
                         </label>
                         <input
                           value={artistName}
                           onChange={(e) => setArtistName(e.target.value)}
                           placeholder={t('landing.form.namePlaceholder', language)}
-                          className="w-full bg-white/[0.04] border border-white/[0.07] focus:border-amber-400/30 rounded-xl px-4 py-3 text-sm text-white placeholder-zinc-700 outline-none transition-colors"
+                          className="w-full bg-white/[0.04] border border-white/[0.07] focus:border-amber-400/30 rounded-xl px-4 py-3 text-sm text-white placeholder-zinc-500 outline-none transition-colors"
                         />
                       </div>
                       <div>
-                        <label className="text-[9px] font-black tracking-[0.3em] uppercase text-zinc-700 mb-1.5 block">
+                        <label className="text-[9px] font-black tracking-[0.3em] uppercase text-zinc-500 mb-1.5 block">
                           {t('landing.form.emailLabel', language)}
                         </label>
                         <input
@@ -302,18 +302,18 @@ export default function LandingPage() {
                           value={artistEmail}
                           onChange={(e) => setArtistEmail(e.target.value)}
                           placeholder={t('landing.form.emailPlaceholder', language)}
-                          className="w-full bg-white/[0.04] border border-white/[0.07] focus:border-amber-400/30 rounded-xl px-4 py-3 text-sm text-white placeholder-zinc-700 outline-none transition-colors"
+                          className="w-full bg-white/[0.04] border border-white/[0.07] focus:border-amber-400/30 rounded-xl px-4 py-3 text-sm text-white placeholder-zinc-500 outline-none transition-colors"
                         />
                       </div>
                       <div>
-                        <label className="text-[9px] font-black tracking-[0.3em] uppercase text-zinc-700 mb-1.5 block">
+                        <label className="text-[9px] font-black tracking-[0.3em] uppercase text-zinc-500 mb-1.5 block">
                           {t('landing.form.socialLabel', language)}
                         </label>
                         <input
                           value={artistSocial}
                           onChange={(e) => setArtistSocial(e.target.value)}
                           placeholder={t('landing.form.socialPlaceholder', language)}
-                          className="w-full bg-white/[0.04] border border-white/[0.07] focus:border-amber-400/30 rounded-xl px-4 py-3 text-sm text-white placeholder-zinc-700 outline-none transition-colors"
+                          className="w-full bg-white/[0.04] border border-white/[0.07] focus:border-amber-400/30 rounded-xl px-4 py-3 text-sm text-white placeholder-zinc-500 outline-none transition-colors"
                         />
                       </div>
                       <button
@@ -329,7 +329,7 @@ export default function LandingPage() {
                   <div className="py-10 text-center">
                     <FaCheckCircle size={30} className="text-amber-400 mx-auto mb-4" />
                     <p className="font-black text-white mb-2">{language === 'pl' ? `Dziękujemy, ${artistName}!` : language === 'en' ? `Thank you, ${artistName}!` : `Danke, ${artistName}!`}</p>
-                    <p className="text-zinc-600 text-sm">{t('landing.form.successSub', language)}</p>
+                    <p className="text-zinc-400 text-sm">{t('landing.form.successSub', language)}</p>
                   </div>
                 )}
               </div>
@@ -339,7 +339,7 @@ export default function LandingPage() {
           {/* Mobile CTAs */}
           <div className="mt-8">
             {tab === 'artist' && (
-              <p className="text-[11px] text-zinc-600 leading-relaxed mb-3">{t('landing.cta.independentNote', language)}</p>
+              <p className="text-[11px] text-zinc-400 leading-relaxed mb-3">{t('landing.cta.independentNote', language)}</p>
             )}
             <div className="space-y-2.5">
               <SignUpButton mode="modal">
@@ -348,7 +348,7 @@ export default function LandingPage() {
                 </button>
               </SignUpButton>
               <SignInButton mode="modal">
-                <button className="w-full py-3 text-zinc-600 hover:text-zinc-300 font-semibold text-[11px] tracking-[0.2em] uppercase transition-colors">
+                <button className="w-full py-3 text-zinc-400 hover:text-zinc-300 font-semibold text-[11px] tracking-[0.2em] uppercase transition-colors">
                   {t('landing.cta.login', language)}
                 </button>
               </SignInButton>
@@ -402,7 +402,7 @@ export default function LandingPage() {
           <div className="flex flex-col justify-between h-full px-14 py-12 max-w-[520px] w-full mx-auto">
 
             <div className="mb-2">
-              <p className="text-[10px] font-black tracking-[0.4em] uppercase text-zinc-700 mb-2">
+              <p className="text-[10px] font-black tracking-[0.4em] uppercase text-zinc-500 mb-2">
                 {t('landing.tagline', language)}
               </p>
               <p className="text-[1.45rem] font-black text-white leading-snug mb-4">
@@ -412,16 +412,16 @@ export default function LandingPage() {
               <p className="text-sm text-zinc-400 leading-relaxed mb-1 max-w-xs">
                 {t('landing.sub', language)}
               </p>
-              <p className="text-xs text-zinc-600 font-medium tracking-widest">— Dawid Faith</p>
+              <p className="text-xs text-zinc-400 font-medium tracking-widest">— Dawid Faith</p>
 
               {artists.length > 0 && (
                 <div className="mt-6">
                   <div className="flex items-center gap-2 mb-3">
                     <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                    <span className="text-[9px] font-black tracking-[0.35em] uppercase text-zinc-500">{t('landing.activeArtists', language)}</span>
+                    <span className="text-[9px] font-black tracking-[0.35em] uppercase text-zinc-400">{t('landing.activeArtists', language)}</span>
                     {totalQuests > 0 && (
                       <>
-                        <span className="text-zinc-800">·</span>
+                        <span className="text-zinc-600">·</span>
                         <span className="text-[9px] font-black tracking-[0.2em] uppercase text-amber-500">{totalQuests} {t('landing.open', language)}</span>
                       </>
                     )}
@@ -433,7 +433,7 @@ export default function LandingPage() {
                           <Image src={a.picture} alt={a.name} width={40} height={40} className="w-10 h-10 rounded-full object-cover shrink-0" />
                         ) : (
                           <div className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center shrink-0">
-                            <FaMusic size={11} className="text-zinc-600" />
+                            <FaMusic size={11} className="text-zinc-400" />
                           </div>
                         )}
                         <span className="text-[9px] font-semibold text-zinc-400 truncate max-w-[60px] text-center">{a.name}</span>
@@ -449,7 +449,7 @@ export default function LandingPage() {
               )}
             </div>
 
-            <p className="text-[11px] text-zinc-600 leading-relaxed mt-8">{t('landing.roleHint', language)}</p>
+            <p className="text-[11px] text-zinc-400 leading-relaxed mt-8">{t('landing.roleHint', language)}</p>
             <div className="flex gap-6 border-b border-white/[0.07] mt-3 mb-7 pb-0">
               {(['fan', 'artist'] as const).map((tabVal) => (
                 <button
@@ -458,7 +458,7 @@ export default function LandingPage() {
                   className={`pb-3 text-[11px] font-black tracking-[0.25em] uppercase border-b-2 transition-all -mb-px ${
                     tab === tabVal
                       ? 'border-amber-400 text-white'
-                      : 'border-transparent text-zinc-600 hover:text-zinc-400'
+                      : 'border-transparent text-zinc-400 hover:text-zinc-200'
                   }`}
                 >
                   {tabVal === 'fan' ? t('landing.forFans', language) : t('landing.forArtists', language)}
@@ -474,7 +474,7 @@ export default function LandingPage() {
                       <span className="text-[10px] font-black text-amber-400/40 w-6 shrink-0 pt-0.5">{f.n}</span>
                       <div>
                         <p className="text-[15px] font-bold text-white mb-1">{f.title}</p>
-                        <p className="text-[13px] text-zinc-500 leading-relaxed">{f.desc}</p>
+                        <p className="text-[13px] text-zinc-400 leading-relaxed">{f.desc}</p>
                       </div>
                     </div>
                   ))}
@@ -488,24 +488,24 @@ export default function LandingPage() {
                           <span className="text-[10px] font-black text-amber-400/40 w-6 shrink-0 pt-0.5">{f.n}</span>
                           <div>
                             <p className="text-[15px] font-bold text-white mb-1">{f.title}</p>
-                            <p className="text-[13px] text-zinc-500 leading-relaxed">{f.desc}</p>
+                            <p className="text-[13px] text-zinc-400 leading-relaxed">{f.desc}</p>
                           </div>
                         </div>
                       ))}
                       <div className="space-y-2.5 pt-3">
                         <div>
-                          <label className="text-[9px] font-black tracking-[0.3em] uppercase text-zinc-700 mb-1.5 block">
+                          <label className="text-[9px] font-black tracking-[0.3em] uppercase text-zinc-500 mb-1.5 block">
                             {t('landing.form.nameLabel', language)}
                           </label>
                           <input
                             value={artistName}
                             onChange={(e) => setArtistName(e.target.value)}
                             placeholder={t('landing.form.namePlaceholder', language)}
-                            className="w-full bg-white/[0.04] border border-white/[0.07] focus:border-amber-400/30 rounded-xl px-4 py-3 text-sm text-white placeholder-zinc-700 outline-none transition-colors"
+                            className="w-full bg-white/[0.04] border border-white/[0.07] focus:border-amber-400/30 rounded-xl px-4 py-3 text-sm text-white placeholder-zinc-500 outline-none transition-colors"
                           />
                         </div>
                         <div>
-                          <label className="text-[9px] font-black tracking-[0.3em] uppercase text-zinc-700 mb-1.5 block">
+                          <label className="text-[9px] font-black tracking-[0.3em] uppercase text-zinc-500 mb-1.5 block">
                             {t('landing.form.emailLabel', language)}
                           </label>
                           <input
@@ -513,18 +513,18 @@ export default function LandingPage() {
                             value={artistEmail}
                             onChange={(e) => setArtistEmail(e.target.value)}
                             placeholder={t('landing.form.emailPlaceholder', language)}
-                            className="w-full bg-white/[0.04] border border-white/[0.07] focus:border-amber-400/30 rounded-xl px-4 py-3 text-sm text-white placeholder-zinc-700 outline-none transition-colors"
+                            className="w-full bg-white/[0.04] border border-white/[0.07] focus:border-amber-400/30 rounded-xl px-4 py-3 text-sm text-white placeholder-zinc-500 outline-none transition-colors"
                           />
                         </div>
                         <div>
-                          <label className="text-[9px] font-black tracking-[0.3em] uppercase text-zinc-700 mb-1.5 block">
+                          <label className="text-[9px] font-black tracking-[0.3em] uppercase text-zinc-500 mb-1.5 block">
                             {t('landing.form.socialLabel', language)}
                           </label>
                           <input
                             value={artistSocial}
                             onChange={(e) => setArtistSocial(e.target.value)}
                             placeholder={t('landing.form.socialPlaceholder', language)}
-                            className="w-full bg-white/[0.04] border border-white/[0.07] focus:border-amber-400/30 rounded-xl px-4 py-3 text-sm text-white placeholder-zinc-700 outline-none transition-colors"
+                            className="w-full bg-white/[0.04] border border-white/[0.07] focus:border-amber-400/30 rounded-xl px-4 py-3 text-sm text-white placeholder-zinc-500 outline-none transition-colors"
                           />
                         </div>
                         <button
@@ -540,7 +540,7 @@ export default function LandingPage() {
                     <div className="py-14 text-center">
                       <FaCheckCircle size={30} className="text-amber-400 mx-auto mb-4" />
                       <p className="font-black text-white mb-2">{language === 'pl' ? `Dziękujemy, ${artistName}!` : language === 'en' ? `Thank you, ${artistName}!` : `Danke, ${artistName}!`}</p>
-                      <p className="text-zinc-600 text-sm">{t('landing.form.successSub', language)}</p>
+                      <p className="text-zinc-400 text-sm">{t('landing.form.successSub', language)}</p>
                     </div>
                   )}
                 </div>
@@ -549,7 +549,7 @@ export default function LandingPage() {
 
             <div className="pt-10">
               {tab === 'artist' && (
-                <p className="text-[11px] text-zinc-600 leading-relaxed mb-3">{t('landing.cta.independentNote', language)}</p>
+                <p className="text-[11px] text-zinc-400 leading-relaxed mb-3">{t('landing.cta.independentNote', language)}</p>
               )}
               <div className="space-y-3">
                 <SignUpButton mode="modal">
@@ -558,7 +558,7 @@ export default function LandingPage() {
                   </button>
                 </SignUpButton>
                 <SignInButton mode="modal">
-                  <button className="w-full py-3 border border-white/[0.06] hover:border-amber-400/20 text-zinc-600 hover:text-zinc-300 font-semibold text-[11px] tracking-[0.2em] uppercase transition-all rounded-xl">
+                  <button className="w-full py-3 border border-white/[0.06] hover:border-amber-400/20 text-zinc-400 hover:text-zinc-300 font-semibold text-[11px] tracking-[0.2em] uppercase transition-all rounded-xl">
                     {t('landing.cta.login', language)}
                   </button>
                 </SignInButton>
@@ -574,9 +574,9 @@ export default function LandingPage() {
       <footer className="px-6 py-5 flex items-center justify-between max-w-7xl mx-auto">
         <div className="flex items-center gap-2">
           <Image src="/D.FAITH.png" alt="" width={12} height={12} className="rounded opacity-25" />
-          <span className="text-[9px] font-bold tracking-[0.3em] uppercase text-zinc-800">D.FAITH Ecosystem</span>
+          <span className="text-[9px] font-bold tracking-[0.3em] uppercase text-zinc-600">D.FAITH Ecosystem</span>
         </div>
-        <span className="text-[9px] text-zinc-800">© 2026</span>
+        <span className="text-[9px] text-zinc-600">© 2026</span>
       </footer>
 
     </main>
