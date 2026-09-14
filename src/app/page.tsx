@@ -4,6 +4,7 @@ import { useUser, SignInButton, SignUpButton } from '@clerk/nextjs';
 import { useEffect, useState } from 'react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { FaMusic, FaCheckCircle, FaChevronRight, FaFire } from 'react-icons/fa';
 import { t, tFmt, tPlural, type Lang } from './utils/i18n';
 import { useSetLang } from './components/LangContext';
@@ -127,6 +128,12 @@ export default function LandingPage() {
           </div>
         </div>
         <div className="flex items-center gap-3">
+          <Link
+            href="/whitepaper"
+            className="text-[11px] font-bold tracking-[0.2em] uppercase text-zinc-400 hover:text-amber-400 transition-colors"
+          >
+            Whitepaper
+          </Link>
           {/* Sprachauswahl */}
           <div className="relative">
             <button
