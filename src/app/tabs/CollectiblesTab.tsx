@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import Image from 'next/image';
 import { useUser } from '@clerk/nextjs';
-import { FaGem, FaFire, FaChevronLeft, FaPlus, FaTimes, FaCheck, FaSync, FaImage, FaEdit } from 'react-icons/fa';
+import { FaGem, FaFire, FaChevronLeft, FaPlus, FaTimes, FaCheck, FaSync, FaImage, FaEdit, FaGift } from 'react-icons/fa';
 import { GiCrystalShine, GiMagicSwirl } from 'react-icons/gi';
 import { useLang } from '../components/LangContext';
 import { t, tFmt } from '../utils/i18n';
@@ -716,6 +716,58 @@ function CollectionPanel({ data, walletAddress, onRefresh, isOwner = false, onSh
   const [selectedUpgradeRarity, setSelectedUpgradeRarity] = useState<CollectibleRarity | null>(null);
   const [mintConfirmRarity, setMintConfirmRarity] = useState<CollectibleRarity | null>(null);
 
+  // Verschenken (Artist: kostenlose NFT-Vergabe an eine E-Mail, auch ohne bestehenden Account)
+  const [giftOpen, setGiftOpen] = useState(false);
+  const [giftRarity, setGiftRarity] = useState<CollectibleRarity>('common');
+  const [giftEmail, setGiftEmail] = useState('');
+  const [giftSending, setGiftSending] = useState(false);
+  const [giftError, setGiftError] = useState('');
+  const [giftHistory, setGiftHistory] = useState<{ id: string; email: string; status: string; rarity: string }[]>([]);
+  const [giftHistoryLoading, setGiftHistoryLoading] = useState(false);
+
+  const loadGiftHistory = useCallback(async () => {
+    setGiftHistoryLoading(true);
+    try {
+      const res = await fetch(`/api/collectibles/gift?wallet=${walletAddress}&collectionId=${data.collection.id}`);
+      if (res.ok) setGiftHistory(await res.json());
+    } finally {
+      setGiftHistoryLoading(false);
+    }
+  }, [walletAddress, data.collection.id]);
+
+  const openGiftModal = () => {
+    setGiftOpen(true);
+    setGiftEmail('');
+    setGiftError('');
+    setGiftHistory([]);
+    loadGiftHistory();
+  };
+
+  const handleSendGift = async () => {
+    if (!/^\S+@\S+\.\S+$/.test(giftEmail)) {
+      setGiftError(lang === 'en' ? 'Please enter a valid email address' : lang === 'pl' ? 'Podaj prawidłowy adres e-mail' : 'Bitte gültige E-Mail-Adresse angeben');
+      return;
+    }
+    setGiftSending(true);
+    setGiftError('');
+    try {
+      const res = await fetch('/api/collectibles/gift', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ wallet: walletAddress, collectionId: data.collection.id, rarity: giftRarity, email: giftEmail }),
+      });
+      const resData = await res.json();
+      if (!res.ok) {
+        setGiftError(resData.error ?? 'Fehler beim Verschenken');
+        return;
+      }
+      setGiftEmail('');
+      loadGiftHistory();
+    } finally {
+      setGiftSending(false);
+    }
+  };
+
   // Shard-Zahl von außen (nach onRefresh) synchronisieren
   useEffect(() => { setLocalShards(data.shards); }, [data.shards]);
 
@@ -747,6 +799,15 @@ function CollectionPanel({ data, walletAddress, onRefresh, isOwner = false, onSh
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">
             <p className="font-black text-white text-sm truncate flex-1">{collection.name}</p>
+            {isOwner && (
+              <button
+                onClick={openGiftModal}
+                className="text-zinc-500 hover:text-amber-400 transition-colors p-1 shrink-0"
+                title="Collectible verschenken"
+              >
+                <FaGift size={13} />
+              </button>
+            )}
             {isOwner && (
               <button
                 onClick={() => setEditOpen(true)}
@@ -934,6 +995,84 @@ function CollectionPanel({ data, walletAddress, onRefresh, isOwner = false, onSh
           onClose={() => setEditOpen(false)}
           onSaved={() => { setEditOpen(false); onRefresh(); }}
         />
+      )}
+
+      {/* Verschenken Modal */}
+      {giftOpen && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-end sm:items-center justify-center z-50 px-4 pb-4 sm:pb-0">
+          <div className="bg-[#161410] border border-white/[0.08] rounded-2xl p-5 w-full max-w-sm shadow-2xl space-y-4 max-h-[85vh] overflow-y-auto">
+            <div className="flex justify-between items-center">
+              <h3 className="font-black text-white text-base flex items-center gap-2">
+                <FaGift size={14} className="text-amber-400" /> „{collection.name}&rdquo; verschenken
+              </h3>
+              <button onClick={() => setGiftOpen(false)} className="text-zinc-500 hover:text-white w-8 h-8 flex items-center justify-center rounded-full hover:bg-white/10">
+                <FaTimes size={14} />
+              </button>
+            </div>
+
+            <p className="text-zinc-400 text-xs leading-relaxed">
+              Die Person bekommt das Collectible sofort als fertiges NFT gemintet, sobald sie sich mit dieser
+              E-Mail-Adresse registriert oder — falls schon Mitglied — sich das nächste Mal einloggt. Ein Account
+              ist dafür vorher nicht nötig; die Mint-Gebühr trägst du als Künstler.
+            </p>
+
+            <div>
+              <label className="text-zinc-400 text-[10px] uppercase tracking-widest mb-1 block">Seltenheit</label>
+              <select value={giftRarity} onChange={e => setGiftRarity(e.target.value as CollectibleRarity)}
+                className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-white text-sm outline-none focus:border-amber-500/50">
+                {RARITY_ORDER.map(r => <option key={r} value={r}>{RARITY_CONFIG[r].label}</option>)}
+              </select>
+            </div>
+
+            <div>
+              <label className="text-zinc-400 text-[10px] uppercase tracking-widest mb-1 block">E-Mail-Adresse</label>
+              <input
+                type="email"
+                value={giftEmail}
+                onChange={e => setGiftEmail(e.target.value)}
+                placeholder="fan@example.com"
+                className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-white text-sm placeholder:text-zinc-600 outline-none focus:border-amber-500/50"
+              />
+            </div>
+
+            {giftError && <p className="text-red-400 text-xs bg-red-500/10 border border-red-500/20 rounded-lg p-2">{giftError}</p>}
+
+            <button
+              onClick={handleSendGift}
+              disabled={giftSending || !giftEmail.trim()}
+              className="w-full flex items-center justify-center gap-2 bg-amber-500 hover:bg-amber-400 disabled:opacity-50 text-black font-bold py-2.5 rounded-xl text-sm transition-colors"
+            >
+              {giftSending
+                ? <span className="w-3.5 h-3.5 border-2 border-black/30 border-t-black rounded-full animate-spin" />
+                : <><FaGift size={12} /> Verschenken</>
+              }
+            </button>
+
+            {(giftHistoryLoading || giftHistory.length > 0) && (
+              <div className="pt-2 border-t border-white/[0.06]">
+                <p className="text-zinc-500 text-[10px] uppercase tracking-widest mb-2">Bisher verschenkt</p>
+                {giftHistoryLoading ? (
+                  <p className="text-zinc-500 text-xs">Lädt…</p>
+                ) : (
+                  <div className="space-y-1.5 max-h-40 overflow-y-auto">
+                    {giftHistory.map(g => (
+                      <div key={g.id} className="flex items-center justify-between gap-2 text-xs">
+                        <span className="text-zinc-300 truncate">{g.email} <span className="text-zinc-600">({g.rarity})</span></span>
+                        <span className={`shrink-0 font-semibold ${
+                          g.status === 'claimed' ? 'text-emerald-400'
+                          : g.status === 'failed' ? 'text-red-400'
+                          : 'text-amber-400'
+                        }`}>
+                          {g.status === 'claimed' ? 'Zugestellt' : g.status === 'failed' ? 'Fehlgeschlagen' : 'Wartet auf Registrierung'}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        </div>
       )}
     </div>
   );

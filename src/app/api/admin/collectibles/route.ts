@@ -91,7 +91,7 @@ export async function GET(req: NextRequest) {
   }
   const { searchParams } = new URL(req.url);
   if (searchParams.get('gifts') === '1') {
-    const gifts = await listCollectibleGifts(searchParams.get('collectionId') ?? undefined);
+    const gifts = await listCollectibleGifts({ collectionId: searchParams.get('collectionId') ?? undefined });
     return NextResponse.json({ gifts });
   }
   const collections = await getAllActiveCollections();
