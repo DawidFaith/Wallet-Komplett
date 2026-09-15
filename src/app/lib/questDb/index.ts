@@ -31,3 +31,4 @@ export * from './concerts';
 export * from './giveaways';
 export * from './youtubeBot';
 export * from './ugc';
+export * from './shopGifts';

@@ -7,7 +7,7 @@ import {
   FaChevronLeft, FaPlus, FaTimes, FaMusic, FaVideo, FaGem, FaCertificate, FaStar,
   FaCoins, FaCheck, FaExternalLinkAlt, FaTrash, FaShoppingBag,
   FaPlay, FaPause, FaDownload, FaBoxOpen, FaLock, FaChevronUp, FaChevronDown, FaEdit,
-  FaCreditCard,
+  FaCreditCard, FaGift,
 } from 'react-icons/fa';
 import CreditsCardCheckout from '../components/CreditsCardCheckout';
 import IdentityVerifyModal from './profile/IdentityVerifyModal';
@@ -70,6 +70,16 @@ interface ShopArtist {
   pictureUrl: string | null;
   itemCount: number;
   rewardToken: string | null;
+}
+
+interface ShopGift {
+  id: string;
+  itemId: string;
+  email: string;
+  status: 'pending' | 'claiming' | 'claimed' | 'failed';
+  error: string | null;
+  createdAt: string;
+  claimedAt: string | null;
 }
 
 // ─── Hilfsfunktionen ─────────────────────────────────────────────────────────
@@ -1482,6 +1492,14 @@ function MyShopPanel({ walletAddress, creditBalance, rewardToken }: { walletAddr
   const [formError, setFormError] = useState('');
   const [formSuccess, setFormSuccess] = useState('');
 
+  // Verschenken (kostenlose Vergabe an eine E-Mail, auch ohne bestehenden Account)
+  const [giftTarget, setGiftTarget] = useState<ShopItem | null>(null);
+  const [giftEmail, setGiftEmail] = useState('');
+  const [giftSending, setGiftSending] = useState(false);
+  const [giftError, setGiftError] = useState('');
+  const [giftHistory, setGiftHistory] = useState<ShopGift[]>([]);
+  const [giftHistoryLoading, setGiftHistoryLoading] = useState(false);
+
   // Edit-State (inline Bearbeitung bestehender Items)
   type EditData = {
     id: string; title: string; desc: string; type: ItemType;
@@ -1693,6 +1711,50 @@ function MyShopPanel({ walletAddress, creditBalance, rewardToken }: { walletAddr
       if (res.ok) setItems(prev => prev.map(i => i.id === itemId ? { ...i, isActive: true } : i));
     } finally {
       setReactivating(null);
+    }
+  };
+
+  const loadGiftHistory = useCallback(async (itemId: string) => {
+    setGiftHistoryLoading(true);
+    try {
+      const res = await fetch(`/api/shop/gift?wallet=${walletAddress}&itemId=${itemId}`);
+      if (res.ok) setGiftHistory(await res.json());
+    } finally {
+      setGiftHistoryLoading(false);
+    }
+  }, [walletAddress]);
+
+  const openGiftModal = (item: ShopItem) => {
+    setGiftTarget(item);
+    setGiftEmail('');
+    setGiftError('');
+    setGiftHistory([]);
+    loadGiftHistory(item.id);
+  };
+
+  const handleSendGift = async () => {
+    if (!giftTarget) return;
+    if (!/^\S+@\S+\.\S+$/.test(giftEmail)) {
+      setGiftError(lang === 'en' ? 'Please enter a valid email address' : lang === 'pl' ? 'Podaj prawidłowy adres e-mail' : 'Bitte gültige E-Mail-Adresse angeben');
+      return;
+    }
+    setGiftSending(true);
+    setGiftError('');
+    try {
+      const res = await fetch('/api/shop/gift', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ wallet: walletAddress, itemId: giftTarget.id, email: giftEmail }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setGiftError(data.error ?? 'Fehler beim Verschenken');
+        return;
+      }
+      setGiftEmail('');
+      loadGiftHistory(giftTarget.id);
+    } finally {
+      setGiftSending(false);
     }
   };
 
@@ -2317,6 +2379,13 @@ function MyShopPanel({ walletAddress, creditBalance, rewardToken }: { walletAddr
                       </button>
                     )}
                     <button
+                      onClick={() => openGiftModal(item)}
+                      className="text-zinc-500 hover:text-amber-400 transition-colors p-1"
+                      title="Verschenken"
+                    >
+                      <FaGift size={12} />
+                    </button>
+                    <button
                       onClick={() => startEdit(item)}
                       className="text-zinc-500 hover:text-amber-400 transition-colors p-1"
                       title="Bearbeiten"
@@ -2394,6 +2463,76 @@ function MyShopPanel({ walletAddress, creditBalance, rewardToken }: { walletAddr
                   </button>
                 </div>
               </>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* ── Verschenken ── */}
+      {giftTarget && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-end sm:items-center justify-center z-50 px-4 pb-4 sm:pb-0">
+          <div className="bg-[#161410] border border-white/[0.08] rounded-2xl p-5 w-full max-w-sm shadow-2xl space-y-4 max-h-[85vh] overflow-y-auto">
+            <div className="flex justify-between items-center">
+              <h3 className="font-black text-white text-base flex items-center gap-2">
+                <FaGift size={14} className="text-amber-400" /> „{giftTarget.title}&rdquo; verschenken
+              </h3>
+              <button onClick={() => setGiftTarget(null)} className="text-zinc-500 hover:text-white w-8 h-8 flex items-center justify-center rounded-full hover:bg-white/10">
+                <FaTimes size={14} />
+              </button>
+            </div>
+
+            <p className="text-zinc-400 text-xs leading-relaxed">
+              Die Person bekommt die Edition kostenlos gutgeschrieben, sobald sie sich mit dieser E-Mail-Adresse
+              registriert oder — falls schon Mitglied — sich das nächste Mal einloggt. Ein Account ist dafür nicht
+              vorher nötig.
+            </p>
+
+            <div>
+              <label className="text-zinc-400 text-[10px] uppercase tracking-widest mb-1 block">E-Mail-Adresse</label>
+              <input
+                type="email"
+                value={giftEmail}
+                onChange={e => setGiftEmail(e.target.value)}
+                placeholder="fan@example.com"
+                className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-white text-sm placeholder:text-zinc-600 focus:outline-none focus:border-amber-500/50"
+              />
+            </div>
+
+            {giftError && <p className="text-red-400 text-xs bg-red-500/10 border border-red-500/20 rounded-lg p-2">{giftError}</p>}
+
+            <button
+              onClick={handleSendGift}
+              disabled={giftSending || !giftEmail.trim()}
+              className="w-full flex items-center justify-center gap-2 bg-amber-500 hover:bg-amber-400 disabled:opacity-50 text-black font-bold py-2.5 rounded-xl text-sm transition-colors"
+            >
+              {giftSending
+                ? <span className="w-3.5 h-3.5 border-2 border-black/30 border-t-black rounded-full animate-spin" />
+                : <><FaGift size={12} /> Verschenken</>
+              }
+            </button>
+
+            {(giftHistoryLoading || giftHistory.length > 0) && (
+              <div className="pt-2 border-t border-white/[0.06]">
+                <p className="text-zinc-500 text-[10px] uppercase tracking-widest mb-2">Bisher verschenkt</p>
+                {giftHistoryLoading ? (
+                  <p className="text-zinc-500 text-xs">Lädt…</p>
+                ) : (
+                  <div className="space-y-1.5 max-h-40 overflow-y-auto">
+                    {giftHistory.map(g => (
+                      <div key={g.id} className="flex items-center justify-between gap-2 text-xs">
+                        <span className="text-zinc-300 truncate">{g.email}</span>
+                        <span className={`shrink-0 font-semibold ${
+                          g.status === 'claimed' ? 'text-emerald-400'
+                          : g.status === 'failed' ? 'text-red-400'
+                          : 'text-amber-400'
+                        }`} title={g.error ?? undefined}>
+                          {g.status === 'claimed' ? 'Zugestellt' : g.status === 'failed' ? 'Fehlgeschlagen' : 'Wartet auf Registrierung'}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
             )}
           </div>
         </div>

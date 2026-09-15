@@ -101,6 +101,17 @@ function HomeContent() {
         });
         if (!cancelled) window.dispatchEvent(new CustomEvent('dfaith:giveaway-claimed'));
       } catch { /* ignore */ }
+      if (cancelled) return;
+      try {
+        // Offen verschenkte Shop-Items (siehe MyShopPanel "Verschenken") mit
+        // derselben E-Mail jetzt diesem Account zuordnen — gleiches Muster
+        // wie der Giveaway-Claim oben.
+        await fetch('/api/shop/claim-gifts', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ walletAddress: userId }),
+        });
+      } catch { /* ignore */ }
     })();
     return () => { cancelled = true; };
   }, [user?.id]);
