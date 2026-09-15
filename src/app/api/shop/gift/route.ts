@@ -11,7 +11,7 @@
  */
 import { NextRequest, NextResponse } from 'next/server';
 import { getDb } from '../../../lib/db';
-import { createShopGift, listShopGiftsForArtist } from '../../../lib/questDb';
+import { createShopGift, listShopGiftsForArtist, cancelShopGift } from '../../../lib/questDb';
 import { requireOwnWallet } from '../../../lib/apiAuth';
 import { checkRateLimit } from '../../../lib/rateLimit';
 
@@ -63,4 +63,19 @@ export async function GET(req: NextRequest) {
 
   const gifts = await listShopGiftsForArtist(wallet.toLowerCase(), itemId);
   return NextResponse.json(gifts);
+}
+
+export async function DELETE(req: NextRequest) {
+  const body = await req.json().catch(() => null);
+  if (!body) return NextResponse.json({ error: 'Kein Body' }, { status: 400 });
+
+  const { wallet, giftId } = body as { wallet?: string; giftId?: string };
+  if (!wallet || !giftId) return NextResponse.json({ error: 'wallet und giftId erforderlich' }, { status: 400 });
+
+  const authCheck = requireOwnWallet(wallet);
+  if (!authCheck.ok) return authCheck.response;
+
+  const cancelled = await cancelShopGift(giftId, wallet.toLowerCase());
+  if (!cancelled) return NextResponse.json({ error: 'Geschenk nicht gefunden oder bereits zugestellt' }, { status: 404 });
+  return NextResponse.json({ success: true });
 }

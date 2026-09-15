@@ -768,6 +768,21 @@ function CollectionPanel({ data, walletAddress, onRefresh, isOwner = false, onSh
     }
   };
 
+  const [cancellingGiftId, setCancellingGiftId] = useState<string | null>(null);
+  const handleCancelGift = async (giftId: string) => {
+    setCancellingGiftId(giftId);
+    try {
+      const res = await fetch('/api/collectibles/gift', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ wallet: walletAddress, giftId }),
+      });
+      if (res.ok) setGiftHistory(prev => prev.filter(g => g.id !== giftId));
+    } finally {
+      setCancellingGiftId(null);
+    }
+  };
+
   // Shard-Zahl von außen (nach onRefresh) synchronisieren
   useEffect(() => { setLocalShards(data.shards); }, [data.shards]);
 
@@ -1058,13 +1073,28 @@ function CollectionPanel({ data, walletAddress, onRefresh, isOwner = false, onSh
                     {giftHistory.map(g => (
                       <div key={g.id} className="flex items-center justify-between gap-2 text-xs">
                         <span className="text-zinc-300 truncate">{g.email} <span className="text-zinc-600">({g.rarity})</span></span>
-                        <span className={`shrink-0 font-semibold ${
-                          g.status === 'claimed' ? 'text-emerald-400'
-                          : g.status === 'failed' ? 'text-red-400'
-                          : 'text-amber-400'
-                        }`}>
-                          {g.status === 'claimed' ? 'Zugestellt' : g.status === 'failed' ? 'Fehlgeschlagen' : 'Wartet auf Registrierung'}
-                        </span>
+                        <div className="flex items-center gap-2 shrink-0">
+                          <span className={`font-semibold ${
+                            g.status === 'claimed' ? 'text-emerald-400'
+                            : g.status === 'failed' ? 'text-red-400'
+                            : 'text-amber-400'
+                          }`}>
+                            {g.status === 'claimed' ? 'Zugestellt' : g.status === 'failed' ? 'Fehlgeschlagen' : 'Wartet auf Registrierung'}
+                          </span>
+                          {g.status === 'pending' && (
+                            <button
+                              onClick={() => handleCancelGift(g.id)}
+                              disabled={cancellingGiftId === g.id}
+                              className="text-zinc-500 hover:text-red-400 disabled:opacity-40 transition-colors"
+                              title="Rückgängig machen"
+                            >
+                              {cancellingGiftId === g.id
+                                ? <span className="w-3 h-3 border border-red-400/30 border-t-red-400 rounded-full animate-spin block" />
+                                : <FaTimes size={11} />
+                              }
+                            </button>
+                          )}
+                        </div>
                       </div>
                     ))}
                   </div>

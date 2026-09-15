@@ -74,6 +74,19 @@ export async function createCollectibleGift(collectionId: string, rarity: Collec
   return rowToGift(rows[0]);
 }
 
+/** Storniert ein noch offenes (nicht zugestelltes) Geschenk. Nur der Artist, dem die Kollektion gehört. */
+export async function cancelCollectibleGift(giftId: string, artistWallet: string): Promise<boolean> {
+  await ensureTables();
+  const sql = getDb();
+  const rows = await sql`
+    DELETE FROM collectible_gifts g
+    USING collectible_collections c
+    WHERE g.id = ${giftId} AND g.collection_id = c.id AND c.artist_wallet = ${artistWallet} AND g.status = 'pending'
+    RETURNING g.id
+  `;
+  return rows.length > 0;
+}
+
 /**
  * @param filter.artistWallet Nur Geschenke aus Kollektionen dieses Artists (Selbstbedienung).
  * @param filter.collectionId Zusätzlich auf eine einzelne Kollektion eingrenzen.

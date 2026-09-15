@@ -72,6 +72,17 @@ export async function createShopGift(itemId: string, artistWallet: string, email
   return rowToGift(rows[0]);
 }
 
+/** Storniert ein noch offenes (nicht zugestelltes) Geschenk. Nur der Artist, der es angelegt hat. */
+export async function cancelShopGift(giftId: string, artistWallet: string): Promise<boolean> {
+  await ensureTables();
+  const sql = getDb();
+  const rows = await sql`
+    DELETE FROM shop_gifts WHERE id = ${giftId} AND artist_wallet = ${artistWallet} AND status = 'pending'
+    RETURNING id
+  `;
+  return rows.length > 0;
+}
+
 export async function listShopGiftsForArtist(artistWallet: string, itemId?: string): Promise<ShopGift[]> {
   await ensureTables();
   const sql = getDb();
