@@ -112,6 +112,16 @@ function HomeContent() {
           body: JSON.stringify({ walletAddress: userId }),
         });
       } catch { /* ignore */ }
+      if (cancelled) return;
+      try {
+        // Per Admin per E-Mail verschenkte Collectibles (siehe /admin →
+        // Collectibles) jetzt diesem Account zuordnen.
+        await fetch('/api/collectibles/claim-gifts', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ walletAddress: userId }),
+        });
+      } catch { /* ignore */ }
     })();
     return () => { cancelled = true; };
   }, [user?.id]);

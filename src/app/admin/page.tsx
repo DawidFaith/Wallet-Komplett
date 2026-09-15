@@ -3380,31 +3380,54 @@ function CollectiblesAdminSection({ secret, users }: { secret: string; users: Ad
   };
 
   // Collectibles
+  const [colRecipientMode, setColRecipientMode] = useState<'wallet' | 'email'>('wallet');
   const [colWallet, setColWallet] = useState('');
+  const [colEmail, setColEmail] = useState('');
   const [colCollectionId, setColCollectionId] = useState('');
   const [colRarity, setColRarity] = useState<AdminRarity>('common');
   const [colLoading, setColLoading] = useState(false);
   const [colMsg, setColMsg] = useState('');
   const [colSearch, setColSearch] = useState('');
+  const [colGifts, setColGifts] = useState<{ id: string; email: string; status: string; collectionId: string }[]>([]);
+  const [colGiftsLoading, setColGiftsLoading] = useState(false);
 
   const colFilteredUsers = users.filter(u =>
     !colSearch || u.walletAddress.toLowerCase().includes(colSearch.toLowerCase()) ||
     (u.displayName ?? '').toLowerCase().includes(colSearch.toLowerCase())
   );
 
+  const loadColGifts = useCallback(() => {
+    if (!secret) return;
+    setColGiftsLoading(true);
+    fetch('/api/admin/collectibles?gifts=1', { headers: { 'x-admin-secret': secret } })
+      .then(r => r.json())
+      .then(d => setColGifts((d as { gifts?: typeof colGifts }).gifts ?? []))
+      .catch(() => {})
+      .finally(() => setColGiftsLoading(false));
+  }, [secret]);
+
+  useEffect(() => { loadColGifts(); }, [loadColGifts]);
+
   const handleGiveCollectible = async () => {
-    if (!colWallet || !colCollectionId) return;
+    if (colRecipientMode === 'wallet' ? !colWallet : !colEmail) return;
+    if (!colCollectionId) return;
     setColLoading(true);
     setColMsg('');
     try {
+      const body = colRecipientMode === 'wallet'
+        ? { action: 'collectible', walletAddress: colWallet, collectionId: colCollectionId, rarity: colRarity }
+        : { action: 'collectible_email', email: colEmail, collectionId: colCollectionId, rarity: colRarity };
       const res = await fetch('/api/admin/collectibles', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'x-admin-secret': secret },
-        body: JSON.stringify({ action: 'collectible', walletAddress: colWallet, collectionId: colCollectionId, rarity: colRarity }),
+        body: JSON.stringify(body),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? 'Fehler');
-      setColMsg(`✓ Collectible (${colRarity}) vergeben. ID: ${data.id}`);
+      setColMsg(colRecipientMode === 'wallet'
+        ? `✓ Collectible (${colRarity}) vergeben. ID: ${data.id}`
+        : `✓ Collectible (${colRarity}) für ${colEmail} reserviert — wird bei Registrierung/Login automatisch zugestellt.`);
+      if (colRecipientMode === 'email') { setColEmail(''); loadColGifts(); }
     } catch (e) {
       setColMsg(`✗ ${e instanceof Error ? e.message : 'Fehler'}`);
     } finally {
@@ -3484,27 +3507,50 @@ function CollectiblesAdminSection({ secret, users }: { secret: string; users: Ad
         </h3>
         {loadingCollections && <p className="text-zinc-500 text-xs mb-3">Kollektionen laden…</p>}
         <div className="space-y-4">
-          <div>
-            <label className="block text-zinc-400 text-xs font-semibold mb-1.5">Empfänger (Wallet)</label>
-            <input type="text" value={colSearch}
-              onChange={e => { setColSearch(e.target.value); setColWallet(''); }}
-              placeholder="Name oder Wallet suchen…"
-              className="w-full bg-zinc-800/80 border border-zinc-700/50 rounded-xl px-3 py-2 text-sm text-white placeholder-zinc-600 outline-none focus:border-purple-500/50"
-            />
-            {colSearch && !colWallet && (
-              <div className="mt-1 bg-zinc-800 border border-zinc-700 rounded-xl overflow-hidden max-h-40 overflow-y-auto">
-                {colFilteredUsers.slice(0, 10).map(u => (
-                  <button key={u.walletAddress} onClick={() => { setColWallet(u.walletAddress); setColSearch(u.displayName ?? u.walletAddress); }}
-                    className="w-full text-left px-3 py-2 text-sm hover:bg-zinc-700 transition-colors flex items-center gap-2">
-                    <span className="text-white">{u.displayName ?? '–'}</span>
-                    <span className="text-zinc-500 text-xs">{u.walletAddress.slice(0, 10)}…</span>
-                  </button>
-                ))}
-                {colFilteredUsers.length === 0 && <p className="px-3 py-2 text-zinc-600 text-xs">Keine Treffer</p>}
-              </div>
-            )}
-            {colWallet && <p className="text-xs text-zinc-500 mt-1">{colWallet}</p>}
+          <div className="flex bg-zinc-800/60 rounded-xl p-1 border border-zinc-700/50 w-fit">
+            <button onClick={() => setColRecipientMode('wallet')}
+              className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors ${colRecipientMode === 'wallet' ? 'bg-purple-600 text-white' : 'text-zinc-400 hover:text-white'}`}>
+              Registrierter Nutzer
+            </button>
+            <button onClick={() => setColRecipientMode('email')}
+              className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors ${colRecipientMode === 'email' ? 'bg-purple-600 text-white' : 'text-zinc-400 hover:text-white'}`}>
+              E-Mail (noch nicht registriert)
+            </button>
           </div>
+
+          {colRecipientMode === 'wallet' ? (
+            <div>
+              <label className="block text-zinc-400 text-xs font-semibold mb-1.5">Empfänger (Wallet)</label>
+              <input type="text" value={colSearch}
+                onChange={e => { setColSearch(e.target.value); setColWallet(''); }}
+                placeholder="Name oder Wallet suchen…"
+                className="w-full bg-zinc-800/80 border border-zinc-700/50 rounded-xl px-3 py-2 text-sm text-white placeholder-zinc-600 outline-none focus:border-purple-500/50"
+              />
+              {colSearch && !colWallet && (
+                <div className="mt-1 bg-zinc-800 border border-zinc-700 rounded-xl overflow-hidden max-h-40 overflow-y-auto">
+                  {colFilteredUsers.slice(0, 10).map(u => (
+                    <button key={u.walletAddress} onClick={() => { setColWallet(u.walletAddress); setColSearch(u.displayName ?? u.walletAddress); }}
+                      className="w-full text-left px-3 py-2 text-sm hover:bg-zinc-700 transition-colors flex items-center gap-2">
+                      <span className="text-white">{u.displayName ?? '–'}</span>
+                      <span className="text-zinc-500 text-xs">{u.walletAddress.slice(0, 10)}…</span>
+                    </button>
+                  ))}
+                  {colFilteredUsers.length === 0 && <p className="px-3 py-2 text-zinc-600 text-xs">Keine Treffer</p>}
+                </div>
+              )}
+              {colWallet && <p className="text-xs text-zinc-500 mt-1">{colWallet}</p>}
+            </div>
+          ) : (
+            <div>
+              <label className="block text-zinc-400 text-xs font-semibold mb-1.5">Empfänger (E-Mail)</label>
+              <input type="email" value={colEmail}
+                onChange={e => setColEmail(e.target.value)}
+                placeholder="fan@example.com"
+                className="w-full bg-zinc-800/80 border border-zinc-700/50 rounded-xl px-3 py-2 text-sm text-white placeholder-zinc-600 outline-none focus:border-purple-500/50"
+              />
+              <p className="text-zinc-600 text-xs mt-1">Wird automatisch zugestellt, sobald sich diese E-Mail registriert oder das nächste Mal einloggt.</p>
+            </div>
+          )}
           <div>
             <label className="block text-zinc-400 text-xs font-semibold mb-1.5">Kollektion</label>
             <select value={colCollectionId} onChange={e => setColCollectionId(e.target.value)}
@@ -3523,11 +3569,30 @@ function CollectiblesAdminSection({ secret, users }: { secret: string; users: Ad
               {ADMIN_RARITIES.map(r => <option key={r} value={r}>{r.charAt(0).toUpperCase() + r.slice(1)}</option>)}
             </select>
           </div>
-          <button onClick={handleGiveCollectible} disabled={colLoading || !colWallet || !colCollectionId}
+          <button onClick={handleGiveCollectible}
+            disabled={colLoading || !colCollectionId || (colRecipientMode === 'wallet' ? !colWallet : !colEmail)}
             className="flex items-center gap-2 px-5 py-2.5 bg-purple-600 hover:bg-purple-500 disabled:bg-zinc-700 disabled:text-zinc-500 text-white font-bold rounded-xl text-sm transition-colors">
             {colLoading ? <FaSync className="animate-spin" /> : <GiCrystalShine />} Collectible vergeben
           </button>
           {colMsg && <p className={`text-sm font-medium ${colMsg.startsWith('✓') ? 'text-green-400' : 'text-red-400'}`}>{colMsg}</p>}
+
+          {colGifts.length > 0 && (
+            <div className="pt-3 border-t border-zinc-800">
+              <p className="text-zinc-500 text-xs font-semibold mb-2">
+                Per E-Mail verschenkt {colGiftsLoading && '(lädt…)'}
+              </p>
+              <div className="space-y-1 max-h-48 overflow-y-auto">
+                {colGifts.map(g => (
+                  <div key={g.id} className="flex items-center justify-between gap-2 text-xs">
+                    <span className="text-zinc-300 truncate">{g.email}</span>
+                    <span className={`shrink-0 font-semibold ${g.status === 'claimed' ? 'text-emerald-400' : 'text-amber-400'}`}>
+                      {g.status === 'claimed' ? 'Zugestellt' : 'Wartet auf Registrierung'}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       </div>
 

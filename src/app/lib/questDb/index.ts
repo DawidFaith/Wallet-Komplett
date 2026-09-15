@@ -32,3 +32,4 @@ export * from './giveaways';
 export * from './youtubeBot';
 export * from './ugc';
 export * from './shopGifts';
+export * from './collectibleGifts';
