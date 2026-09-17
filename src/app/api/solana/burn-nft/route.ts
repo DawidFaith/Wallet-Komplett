@@ -12,6 +12,7 @@ import {
   mplTokenMetadata,
   burnV1,
   mintV1,
+  fetchDigitalAsset,
   TokenStandard,
   findEditionMarkerPda,
   findMasterEditionPda,
@@ -20,6 +21,7 @@ import { mplCore, burn as coreBurn, fetchAssetV1, fetchCollectionV1 } from '@met
 import {
   keypairIdentity,
   publicKey as umiPubkey,
+  unwrapOption,
 } from '@metaplex-foundation/umi';
 import { fromWeb3JsKeypair } from '@metaplex-foundation/umi-web3js-adapters';
 import { Connection, Keypair, PublicKey } from '@solana/web3.js';
@@ -186,12 +188,19 @@ export async function POST(req: NextRequest) {
         tokenStandard:      TokenStandard.NonFungible,
       }).sendAndConfirm(holderUmi);
     } else {
-      // Kein Master gefunden → einfacher Burn (z.B. normale NFTs)
+      // Kein Master gefunden → generischer Burn (z.B. fremde/gekaufte NFTs).
+      // Echten Token-Standard on-chain lesen statt NonFungible zu raten —
+      // sonst schlägt der Burn bei Programmable NFTs (pNFT, heute bei vielen
+      // Marktplatz-Collections Standard) fehl: burnV1 löst das nötige
+      // tokenRecord-Konto nur automatisch auf, wenn tokenStandard explizit
+      // als ProgrammableNonFungible übergeben wird.
+      const digitalAsset  = await fetchDigitalAsset(holderUmi, umiPubkey(mintAddress));
+      const tokenStandard = unwrapOption(digitalAsset.metadata.tokenStandard) ?? TokenStandard.NonFungible;
       await burnV1(holderUmi, {
         mint:          umiPubkey(mintAddress),
         authority:     holderUmi.identity,
         tokenOwner:    holderUmi.identity.publicKey,
-        tokenStandard: TokenStandard.NonFungible,
+        tokenStandard,
       }).sendAndConfirm(holderUmi);
     }
 
@@ -199,6 +208,6 @@ export async function POST(req: NextRequest) {
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
     console.error('Burn NFT Fehler:', msg);
-    return NextResponse.json({ error: 'NFT konnte nicht verbrannt werden. Bitte versuche es erneut.' }, { status: 500 });
+    return NextResponse.json({ error: `NFT konnte nicht verbrannt werden: ${msg}` }, { status: 500 });
   }
 }
