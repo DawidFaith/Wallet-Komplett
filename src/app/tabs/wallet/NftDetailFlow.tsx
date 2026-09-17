@@ -22,6 +22,7 @@ export interface OwnedNft {
   collection: string | null;
   isDfaith:   boolean;
   interface:  string;
+  compressed: boolean;
   attributes: { trait_type: string; value: string }[];
 }
 
@@ -391,11 +392,16 @@ function SongDetail({ nft, shopNft, onClose, onSend, onBurn }: {
               className="bg-white/[0.07] hover:bg-white/[0.12] text-zinc-500 hover:text-zinc-300 text-xs font-medium px-2.5 py-1.5 rounded-lg flex items-center gap-1 transition-colors">
               <FaExternalLinkAlt size={8} /> Solscan
             </a>
-            {!nft.isDfaith && (
+            {!nft.isDfaith && !nft.compressed && (
               <button onClick={onBurn}
                 className="bg-red-950/50 hover:bg-red-900/60 text-red-300 text-xs font-medium px-2.5 py-1.5 rounded-lg flex items-center gap-1 transition-colors">
                 🔥 Verbrennen
               </button>
+            )}
+            {!nft.isDfaith && nft.compressed && (
+              <span className="text-zinc-600 text-[10px] px-1 py-1.5" title="Compressed NFTs können hier noch nicht verbrannt werden">
+                Compressed · kein Burn möglich
+              </span>
             )}
           </div>
         </div>
@@ -516,11 +522,16 @@ function CollectibleDetail({ nft, lang, onClose, onSend, onRedeem, onBurn }: {
               className="bg-white/[0.07] hover:bg-white/[0.12] text-zinc-500 hover:text-zinc-300 text-xs font-medium px-2.5 py-1.5 rounded-lg flex items-center gap-1 transition-colors">
               <FaExternalLinkAlt size={8} /> Solscan
             </a>
-            {!nft.isDfaith && (
+            {!nft.isDfaith && !nft.compressed && (
               <button onClick={onBurn}
                 className="bg-red-950/50 hover:bg-red-900/60 text-red-300 text-xs font-medium px-2.5 py-1.5 rounded-lg flex items-center gap-1 transition-colors">
                 🔥 Verbrennen
               </button>
+            )}
+            {!nft.isDfaith && nft.compressed && (
+              <span className="text-zinc-600 text-[10px] px-1 py-1.5" title="Compressed NFTs können hier noch nicht verbrannt werden">
+                Compressed · kein Burn möglich
+              </span>
             )}
           </div>
         </div>

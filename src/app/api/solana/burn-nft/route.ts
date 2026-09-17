@@ -89,6 +89,20 @@ export async function POST(req: NextRequest) {
     const rl = await checkRateLimit(`burn-nft:${authCheck.userId}`, 10, 60);
     if (!rl.ok) return rl.response!;
 
+    // Kompressierte NFTs (Bubblegum/Merkle-Tree) haben KEIN eigenes on-chain
+    // Konto unter ihrer DAS-"id" — jeder Versuch, sie als mpl-core-Asset oder
+    // klassisches SPL-Mint zu lesen, scheitert daher zwangsläufig mit einem
+    // irreführenden "Account not found". Das früh erkennen und ehrlich
+    // melden, statt beide (garantiert erfolglosen) Burn-Pfade durchzuprobieren.
+    const preCheckConn = new Connection(RPC_URL, 'confirmed');
+    const mintAccountInfo = await preCheckConn.getAccountInfo(new PublicKey(mintAddress)).catch(() => null);
+    if (!mintAccountInfo) {
+      return NextResponse.json({
+        error: 'Dieses NFT ist vermutlich ein "compressed NFT" (kompaktes Solana-Format ohne eigenes Konto) — das Verbrennen davon wird aktuell nicht unterstützt.',
+        code: 'possibly_compressed',
+      }, { status: 400 });
+    }
+
     const sql = getDb();
 
     const rows = await sql`

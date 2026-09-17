@@ -21,6 +21,8 @@ export interface WalletNft {
   collection:   string | null;
   isDfaith:     boolean;
   interface:    string;
+  /** Compressed NFT (Bubblegum/Merkle-Tree) — hat kein eigenes on-chain Konto, Verbrennen wird (noch) nicht unterstützt. */
+  compressed:   boolean;
   attributes:   { trait_type: string; value: string }[];
 }
 
@@ -66,6 +68,7 @@ export async function GET(req: NextRequest) {
             json_uri?: string;
           };
           grouping?: { group_key: string; group_value: string }[];
+          compression?: { compressed?: boolean };
           // mpl-core on-chain plugins (Helius DAS liefert snake_case: attribute_list)
           plugins?: {
             attributes?: {
@@ -126,6 +129,7 @@ export async function GET(req: NextRequest) {
           collection,
           isDfaith,
           interface:  a.interface,
+          compressed: a.compression?.compressed === true,
           attributes,
         };
       });
