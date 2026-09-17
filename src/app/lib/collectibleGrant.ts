@@ -6,9 +6,16 @@
  * Unterschied zum normalen Collectible-Drop: dort landet erst eine "unminted"
  * Zeile in user_collectibles und der Fan mintet später selbst (zahlt selbst,
  * braucht Identitätsverifizierung) über /api/collectibles/mint-nft. Hier wird
- * sofort gemintet — die DB-Zeile entsteht daher auch erst NACH erfolgreichem
- * Mint (mit nft_mint_address direkt gesetzt), nicht vorher, damit bei einem
- * Mint-Fehler kein "totes" unminted Collectible übrig bleibt.
+ * sofort gemintet.
+ *
+ * Wichtig: die on-chain uri des Assets zeigt auf
+ * /api/nft-metadata/collectible/{collectibleId}, und dieser Endpoint liest
+ * die Daten aus genau dieser user_collectibles-Zeile — die Zeile muss also
+ * VOR dem Mint existieren (auch ohne nft_mint_address), sonst laufen
+ * Wallets/DAS-Indexer, die die Metadata sofort nach dem Mint abrufen
+ * (teils innerhalb von Millisekunden), ins Leere und zeigen dauerhaft kein
+ * Bild/keine Attribute mehr an, selbst wenn die Zeile kurz danach doch noch
+ * angelegt wird. Bei einem Mint-Fehler wird die Zeile wieder gelöscht.
  */
 import { getDb } from './db';
 import { mintCollectibleAsset } from './collectibleNft';
@@ -66,27 +73,36 @@ export async function grantCollectibleAsNftToWallet(
   const shardBonus = Math.round(Number(coll.max_shard_chance_bonus) * RARITY_REP_MULTIPLIER[rarity]);
 
   const collectibleId = crypto.randomUUID();
-  const result = await mintCollectibleAsset({
-    collectibleId,
-    collectionMint: nftCollectionMint,
-    collectionName: coll.name as string,
-    collectionImageUri: coll.image_url as string,
-    ownerSolanaAddress: recipientSolana,
-    artistSolanaAddress: coll.artist_solana as string,
-    artistName: coll.artist_name as string,
-    rarity,
-    repBonusPercent: repBonus,
-    creditBonusPercent: creditBonus,
-    shardBonus,
-    primaryBonus: (coll.primary_bonus ?? 'rep') as 'rep' | 'credits' | 'shard',
-    activeSlots: getActiveSlotsCount(rarity),
-    payerKeypair: artistKeypair,
-  });
 
+  // Zeile zuerst anlegen (ohne nft_mint_address), damit die on-chain uri ab
+  // dem Mint-Call sofort auflösbar ist — siehe Kommentar oben.
   await sql`
-    INSERT INTO user_collectibles (id, wallet_address, collection_id, rarity, nft_mint_address)
-    VALUES (${collectibleId}, ${wallet}, ${collectionId}, ${rarity}, ${result.assetMint})
+    INSERT INTO user_collectibles (id, wallet_address, collection_id, rarity)
+    VALUES (${collectibleId}, ${wallet}, ${collectionId}, ${rarity})
   `;
 
-  return { collectibleId, mintAddress: result.assetMint };
+  try {
+    const result = await mintCollectibleAsset({
+      collectibleId,
+      collectionMint: nftCollectionMint,
+      collectionName: coll.name as string,
+      collectionImageUri: coll.image_url as string,
+      ownerSolanaAddress: recipientSolana,
+      artistSolanaAddress: coll.artist_solana as string,
+      artistName: coll.artist_name as string,
+      rarity,
+      repBonusPercent: repBonus,
+      creditBonusPercent: creditBonus,
+      shardBonus,
+      primaryBonus: (coll.primary_bonus ?? 'rep') as 'rep' | 'credits' | 'shard',
+      activeSlots: getActiveSlotsCount(rarity),
+      payerKeypair: artistKeypair,
+    });
+
+    await sql`UPDATE user_collectibles SET nft_mint_address = ${result.assetMint} WHERE id = ${collectibleId}`;
+    return { collectibleId, mintAddress: result.assetMint };
+  } catch (err) {
+    await sql`DELETE FROM user_collectibles WHERE id = ${collectibleId}`;
+    throw err instanceof Error ? err : new Error(String(err));
+  }
 }
