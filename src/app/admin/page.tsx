@@ -3294,6 +3294,33 @@ function CollectiblesAdminSection({ secret, users }: { secret: string; users: Ad
   const [deleteMsg, setDeleteMsg]         = useState('');
   const [deleteConfirm, setDeleteConfirm] = useState(false);
 
+  // NFT-Besitzer resynchronisieren (nach manuellem "NFT senden" vor dem Fix,
+  // der buyer_wallet/wallet_address noch nicht mitgezogen hat)
+  const [resyncMint, setResyncMint]       = useState('');
+  const [resyncLoading, setResyncLoading] = useState(false);
+  const [resyncMsg, setResyncMsg]         = useState('');
+
+  const handleResyncOwner = async () => {
+    if (!resyncMint.trim()) return;
+    setResyncLoading(true);
+    setResyncMsg('');
+    try {
+      const res = await fetch('/api/admin/resync-nft-owner', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-admin-secret': secret },
+        body: JSON.stringify({ mintAddress: resyncMint.trim() }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error ?? 'Fehler');
+      setResyncMsg(`✓ Besitzer synchronisiert: ${data.newOwnerWallet} (Shop: ${data.shopPurchasesUpdated}, Collectibles: ${data.collectiblesUpdated})`);
+      setResyncMint('');
+    } catch (e) {
+      setResyncMsg(`✗ ${e instanceof Error ? e.message : 'Fehler'}`);
+    } finally {
+      setResyncLoading(false);
+    }
+  };
+
   const handleDeleteLegacy = async () => {
     if (!deleteConfirm) { setDeleteConfirm(true); return; }
     setDeleteLoading(true);
@@ -3594,6 +3621,35 @@ function CollectiblesAdminSection({ secret, users }: { secret: string; users: Ad
             </div>
           )}
         </div>
+      </div>
+
+      {/* NFT-Besitzer resynchronisieren */}
+      <div className="bg-zinc-900/60 border border-zinc-800/60 rounded-2xl p-6">
+        <h3 className="text-white font-bold text-base mb-2 flex items-center gap-2">
+          <FaSync className="text-blue-400" /> NFT-Besitzer synchronisieren
+        </h3>
+        <p className="text-zinc-400 text-xs mb-4">
+          Liest den echten On-Chain-Besitzer eines NFTs (Mint-Adresse) und trägt ihn in{' '}
+          <code className="bg-zinc-800 px-1 rounded">shop_purchases</code> / <code className="bg-zinc-800 px-1 rounded">user_collectibles</code>{' '}
+          ein. Nötig, wenn ein NFT manuell per &bdquo;Senden&ldquo; die Wallet gewechselt hat und danach Beschreibung/MP3/Zuordnung fehlen.
+        </p>
+        <div className="flex items-center gap-3 flex-wrap">
+          <input
+            type="text" value={resyncMint}
+            onChange={e => setResyncMint(e.target.value)}
+            placeholder="Mint-Adresse (Solscan-Link im NFT)"
+            className="flex-1 min-w-[280px] bg-zinc-800/80 border border-zinc-700/50 rounded-xl px-3 py-2.5 text-sm text-white placeholder-zinc-600 outline-none focus:border-blue-500/50 font-mono"
+          />
+          <button onClick={handleResyncOwner} disabled={resyncLoading || !resyncMint.trim()}
+            className="flex items-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-500 disabled:bg-zinc-700 disabled:text-zinc-500 text-white font-bold rounded-xl text-sm transition-colors">
+            {resyncLoading ? <FaSync className="animate-spin" /> : <FaSync />} Synchronisieren
+          </button>
+        </div>
+        {resyncMsg && (
+          <p className={`text-sm font-medium mt-3 ${resyncMsg.startsWith('✗') ? 'text-red-400' : 'text-green-400'}`}>
+            {resyncMsg}
+          </p>
+        )}
       </div>
 
       {/* Pre-NFT Daten löschen */}

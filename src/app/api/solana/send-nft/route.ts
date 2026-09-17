@@ -64,6 +64,21 @@ export async function POST(req: Request) {
       payerKeypair: getTreasuryKeypair(),
     });
 
+    // Interne Besitzer-Zuordnung nachziehen, damit DB-Zusatzdaten (Song-
+    // Beschreibung, MP3-Link bzw. Collectible-Zugehörigkeit) dem neuen
+    // Besitzer folgen — sonst zeigt /api/nfts für ihn weiterhin nichts an,
+    // obwohl das NFT on-chain schon umgezogen ist (toAddress ist eine
+    // Solana-Adresse, buyer_wallet/wallet_address speichern aber die
+    // Clerk-Wallet-ID — daher der Umweg über solana_accounts).
+    const newOwnerRows = await sql`
+      SELECT wallet_address FROM solana_accounts WHERE solana_address = ${toAddress} LIMIT 1
+    `;
+    if (newOwnerRows.length) {
+      const newOwnerWallet = newOwnerRows[0].wallet_address as string;
+      await sql`UPDATE shop_purchases SET buyer_wallet = ${newOwnerWallet} WHERE nft_mint_address = ${mintAddress}`;
+      await sql`UPDATE user_collectibles SET wallet_address = ${newOwnerWallet} WHERE nft_mint_address = ${mintAddress}`;
+    }
+
     return NextResponse.json({ success: true });
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
