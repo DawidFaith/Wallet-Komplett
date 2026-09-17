@@ -18,17 +18,10 @@ import { TUTORIAL_DISMISSED_KEY } from './quest-board/utils';
 import type { SupportedLanguage } from '../utils/deepLTranslation';
 import { t, tFmt, type Lang } from '../utils/i18n';
 import { useLang } from '../components/LangContext';
+import NftDetailFlow, { type OwnedNft, type ShopNftData } from './wallet/NftDetailFlow';
 
 type SocialPlatform = 'instagram' | 'tiktok' | 'facebook';
 type AnyPlatform = SocialPlatform | 'youtube';
-
-interface ProfileNft {
-  mint:       string;
-  name:       string;
-  image:      string | null;
-  isDfaith:   boolean;
-  attributes: { trait_type: string; value: string }[];
-}
 
 interface ProfileData {
   xp: number;
@@ -261,7 +254,9 @@ export default function ProfileTab({ language = 'de', onNavigate, onNavigateToAr
   }, [account?.address]);
 
   // Eigene NFTs (Songs + Collectibles + fremde) laden — Anzeige als Sammelkarten im Guthaben-Bereich
-  const [profileNfts, setProfileNfts] = useState<ProfileNft[] | null>(null);
+  const [profileNfts, setProfileNfts] = useState<OwnedNft[] | null>(null);
+  const [profileShopNftsMap, setProfileShopNftsMap] = useState<Record<string, ShopNftData>>({});
+  const [selectedNft, setSelectedNft] = useState<OwnedNft | null>(null);
   const loadNfts = useCallback(async () => {
     if (!account?.address) { setProfileNfts(null); return; }
     try {
@@ -270,10 +265,22 @@ export default function ProfileTab({ language = 'de', onNavigate, onNavigateToAr
       const accData = await accRes.json();
       const solanaAddress = accData.solanaAddress as string | null;
       if (!solanaAddress) return;
-      const nftRes = await fetch(`/api/solana/nfts?solanaAddress=${solanaAddress}`);
-      if (!nftRes.ok) return;
-      const nftData = await nftRes.json();
-      setProfileNfts(Array.isArray(nftData) ? nftData : []);
+      const [nftRes, shopNftRes] = await Promise.all([
+        fetch(`/api/solana/nfts?solanaAddress=${solanaAddress}`),
+        fetch(`/api/nfts?wallet=${account.address}`),
+      ]);
+      if (nftRes.ok) {
+        const nftData = await nftRes.json();
+        setProfileNfts(Array.isArray(nftData) ? nftData : []);
+      }
+      if (shopNftRes.ok) {
+        const shopNftData = await shopNftRes.json();
+        const smap: Record<string, ShopNftData> = {};
+        for (const s of (Array.isArray(shopNftData) ? shopNftData : [])) {
+          if (s.printMint) smap[s.printMint] = s as ShopNftData;
+        }
+        setProfileShopNftsMap(smap);
+      }
     } catch {
       /* Karten bleiben leer — nicht kritisch für den Rest der Seite */
     }
@@ -659,7 +666,7 @@ export default function ProfileTab({ language = 'de', onNavigate, onNavigateToAr
                 {profileNfts.map(nft => (
                   <button
                     key={nft.mint}
-                    onClick={() => onNavigate?.('solana-wallet')}
+                    onClick={() => setSelectedNft(nft)}
                     className="shrink-0 w-20 group text-left"
                   >
                     <div className="relative w-20 h-20 rounded-xl overflow-hidden border border-white/[0.1] bg-gradient-to-br from-violet-900/40 to-zinc-900 shadow-lg group-hover:border-amber-400/50 transition-colors">
@@ -1284,6 +1291,19 @@ export default function ProfileTab({ language = 'de', onNavigate, onNavigateToAr
           lang={lang}
           onClose={() => setShowDepositModal(false)}
           onSuccess={() => { loadProfile(); loadDfaithBalance(); }}
+        />
+      )}
+
+      {selectedNft && account?.address && (
+        <NftDetailFlow
+          nft={selectedNft}
+          shopNft={profileShopNftsMap[selectedNft.mint] ?? null}
+          userId={account.address}
+          onClose={() => setSelectedNft(null)}
+          onChanged={mint => {
+            setProfileNfts(prev => prev ? prev.filter(n => n.mint !== mint) : prev);
+            setSelectedNft(null);
+          }}
         />
       )}
 
