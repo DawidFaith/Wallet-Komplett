@@ -116,11 +116,12 @@ function SongNftCard({ nft, shopNft, onOpen }: {
 }
 
 // ─── Song NFT Detail-Modal ─────────────────────────────────────────────────────
-function SongNftDetailModal({ nft, shopNft, onClose, onSend }: {
+function SongNftDetailModal({ nft, shopNft, onClose, onSend, onBurn }: {
   nft:     OwnedNft;
   shopNft: ShopNftData | null;
   onClose: () => void;
   onSend:  () => void;
+  onBurn:  () => void;
 }) {
   const [playing, setPlaying] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
@@ -237,6 +238,12 @@ function SongNftDetailModal({ nft, shopNft, onClose, onSend }: {
               className="bg-white/[0.07] hover:bg-white/[0.12] text-zinc-500 hover:text-zinc-300 text-xs font-medium px-2.5 py-1.5 rounded-lg flex items-center gap-1 transition-colors">
               <FaExternalLinkAlt size={8} /> Solscan
             </a>
+            {!nft.isDfaith && (
+              <button onClick={onBurn}
+                className="bg-red-950/50 hover:bg-red-900/60 text-red-300 text-xs font-medium px-2.5 py-1.5 rounded-lg flex items-center gap-1 transition-colors">
+                🔥 Verbrennen
+              </button>
+            )}
           </div>
         </div>
       </div>
@@ -280,11 +287,12 @@ function CollectibleNftCard({ nft, onOpen }: { nft: OwnedNft; onOpen: () => void
 }
 
 // ─── Collectible NFT Detail-Modal ──────────────────────────────────────────────
-function CollectibleNftDetailModal({ nft, onClose, onSend, onRedeem }: {
+function CollectibleNftDetailModal({ nft, onClose, onSend, onRedeem, onBurn }: {
   nft:      OwnedNft;
   onClose:  () => void;
   onSend:   () => void;
   onRedeem: () => void;
+  onBurn:   () => void;
 }) {
   const rarityRaw   = nft.attributes.find(a => a.trait_type === 'Rarity')?.value?.toLowerCase() ?? '';
   const artistAttr  = nft.attributes.find(a => a.trait_type === 'Artist')?.value;
@@ -376,14 +384,22 @@ function CollectibleNftDetailModal({ nft, onClose, onSend, onRedeem }: {
               className="bg-white/[0.07] hover:bg-white/[0.12] text-zinc-300 text-xs font-medium px-2.5 py-1.5 rounded-lg flex items-center gap-1 transition-colors">
               <FaPaperPlane size={9} /> Send
             </button>
-            <button onClick={onRedeem}
-              className="bg-purple-950/50 hover:bg-purple-900/60 text-purple-300 text-xs font-medium px-2.5 py-1.5 rounded-lg flex items-center gap-1 transition-colors">
-              ✨ Einlösen
-            </button>
+            {nft.isDfaith && (
+              <button onClick={onRedeem}
+                className="bg-purple-950/50 hover:bg-purple-900/60 text-purple-300 text-xs font-medium px-2.5 py-1.5 rounded-lg flex items-center gap-1 transition-colors">
+                ✨ Einlösen
+              </button>
+            )}
             <a href={`https://solscan.io/account/${nft.mint}`} target="_blank" rel="noopener noreferrer"
               className="bg-white/[0.07] hover:bg-white/[0.12] text-zinc-500 hover:text-zinc-300 text-xs font-medium px-2.5 py-1.5 rounded-lg flex items-center gap-1 transition-colors">
               <FaExternalLinkAlt size={8} /> Solscan
             </a>
+            {!nft.isDfaith && (
+              <button onClick={onBurn}
+                className="bg-red-950/50 hover:bg-red-900/60 text-red-300 text-xs font-medium px-2.5 py-1.5 rounded-lg flex items-center gap-1 transition-colors">
+                🔥 Verbrennen
+              </button>
+            )}
           </div>
         </div>
       </div>
@@ -970,7 +986,7 @@ export default function SolanaWalletTab() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ walletAddress: userId, mintAddress: nftBurnTarget.mint }),
       });
-      const d = await res.json();
+      const d = await res.json().catch(() => ({ error: 'Leere Antwort vom Server' }));
       if (!res.ok) throw new Error(d.error ?? 'Burn fehlgeschlagen');
       setNftBurnOk('✓ NFT geburnt — SOL zurückerhalten');
       setNfts(prev => prev.filter(n => n.mint !== nftBurnTarget.mint));
@@ -1540,6 +1556,11 @@ export default function SolanaWalletTab() {
             setSongDetailNft(null);
             setNftSendTarget(nft); setNftSendErr(''); setNftSendOk(''); setNftRecipient('');
           }}
+          onBurn={() => {
+            const nft = songDetailNft;
+            setSongDetailNft(null);
+            setNftBurnTarget(nft); setNftBurnErr(''); setNftBurnOk('');
+          }}
         />
       )}
 
@@ -1557,6 +1578,11 @@ export default function SolanaWalletTab() {
             const nft = collectibleDetailNft;
             setCollectibleDetailNft(null);
             setNftRedeemTarget(nft); setNftRedeemErr(''); setNftRedeemOk('');
+          }}
+          onBurn={() => {
+            const nft = collectibleDetailNft;
+            setCollectibleDetailNft(null);
+            setNftBurnTarget(nft); setNftBurnErr(''); setNftBurnOk('');
           }}
         />
       )}
