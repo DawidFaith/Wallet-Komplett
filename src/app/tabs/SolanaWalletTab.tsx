@@ -937,19 +937,18 @@ export default function SolanaWalletTab() {
     if (!nftRecipient.trim()) { setNftSendErr('Empfänger-Adresse fehlt'); return; }
     setNftSending(true);
     try {
-      const res = await fetch('/api/solana/send-token', {
+      const res = await fetch('/api/solana/send-nft', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           walletAddress: userId,
           toAddress: nftRecipient.trim(),
-          amount: 1,
           mintAddress: nftSendTarget.mint,
         }),
       });
-      const d = await res.json();
+      const d = await res.json().catch(() => ({ error: 'Leere Antwort vom Server' }));
       if (!res.ok) throw new Error(d.error ?? 'Transfer fehlgeschlagen');
-      setNftSendOk(`✓ NFT gesendet: ${d.signature}`);
+      setNftSendOk('✓ NFT gesendet');
       setNfts(prev => prev.filter(n => n.mint !== nftSendTarget.mint));
       setNftRecipient('');
       setTimeout(() => { setNftSendTarget(null); setNftSendOk(''); }, 3000);
