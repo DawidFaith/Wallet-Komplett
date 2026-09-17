@@ -87,7 +87,15 @@ export async function GET(req: NextRequest) {
     const items = json.result?.items ?? [];
 
     const nfts: WalletNft[] = items
-      .filter(a => ['V1_NFT', 'ProgrammableNFT', 'MplCoreAsset'].includes(a.interface) && !a.burnt)
+      .filter(a =>
+        ['V1_NFT', 'ProgrammableNFT', 'MplCoreAsset'].includes(a.interface)
+        && !a.burnt
+        // Compressed NFTs (Bubblegum/Merkle-Tree) haben kein eigenes
+        // on-chain Konto und können hier weder verbrannt noch versendet
+        // werden (siehe /api/solana/burn-nft) — bis das unterstützt wird,
+        // besser gar nicht erst anzeigen statt eine defekte Aktion.
+        && a.compression?.compressed !== true,
+      )
       .map(a => {
         const meta    = a.content?.metadata;
         const links   = a.content?.links;
