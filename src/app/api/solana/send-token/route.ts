@@ -2,6 +2,10 @@
  * POST /api/solana/send-token
  * Body: { walletAddress: string, toAddress: string, amount: number, mintAddress?: string }
  * Sendet SPL-Token (default: D.FAITH) aus dem custodial User-Wallet.
+ *
+ * Die Treasury zahlt die Tx-Fee und ggf. die Rent für eine neue Ziel-ATA
+ * (fee payer) — der User signiert nur die Transfer-Instruktion als Token-
+ * Owner. Custodial Wallets brauchen dafür kein eigenes SOL vorzuhalten.
  */
 import { NextResponse } from 'next/server';
 import { Connection, Keypair, PublicKey, Transaction, sendAndConfirmTransaction } from '@solana/web3.js';
@@ -15,6 +19,7 @@ import { getDb } from '@/app/lib/db';
 import { decryptKey } from '@/app/lib/solanaCrypto';
 import { requireOwnWallet } from '@/app/lib/apiAuth';
 import { checkRateLimit } from '@/app/lib/rateLimit';
+import { getTreasuryKeypair } from '@/app/lib/solanaOperator';
 
 const RPC_URL     = process.env.NEXT_PUBLIC_SOLANA_RPC_URL ?? 'https://api.mainnet-beta.solana.com';
 const DFAITH_MINT = process.env.NEXT_PUBLIC_SOLANA_DFAITH_TOKEN;
@@ -62,18 +67,21 @@ export async function POST(req: Request) {
   const fromAta = await getAssociatedTokenAddress(mintPk, kp.publicKey, false, TOKEN_PROGRAM_ID, ASSOCIATED_TOKEN_PROGRAM_ID);
   const toAta   = await getAssociatedTokenAddress(mintPk, toPk, false, TOKEN_PROGRAM_ID, ASSOCIATED_TOKEN_PROGRAM_ID);
 
-  const tx = new Transaction();
+  const treasuryKp = getTreasuryKeypair();
 
-  // Ziel-ATA anlegen wenn nötig
+  const tx = new Transaction();
+  tx.feePayer = treasuryKp.publicKey;
+
+  // Ziel-ATA anlegen wenn nötig — Treasury zahlt die Rent
   try {
     await getAccount(connection, toAta);
   } catch {
-    tx.add(createAssociatedTokenAccountInstruction(kp.publicKey, toAta, toPk, mintPk, TOKEN_PROGRAM_ID, ASSOCIATED_TOKEN_PROGRAM_ID));
+    tx.add(createAssociatedTokenAccountInstruction(treasuryKp.publicKey, toAta, toPk, mintPk, TOKEN_PROGRAM_ID, ASSOCIATED_TOKEN_PROGRAM_ID));
   }
 
   const rawAmount = BigInt(Math.round(amount * 10 ** decimals));
   tx.add(createTransferInstruction(fromAta, toAta, kp.publicKey, rawAmount, [], TOKEN_PROGRAM_ID));
 
-  const sig = await sendAndConfirmTransaction(connection, tx, [kp]);
+  const sig = await sendAndConfirmTransaction(connection, tx, [treasuryKp, kp]);
   return NextResponse.json({ success: true, signature: sig, explorerUrl: `https://solscan.io/tx/${sig}` });
 }

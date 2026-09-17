@@ -14,6 +14,9 @@
  * die Collection wird automatisch aus der Update Authority des Assets
  * abgeleitet — funktioniert unabhängig davon, ob es ein Song- oder
  * Collectible-Asset ist).
+ *
+ * Die Treasury zahlt die Tx-Fee (payerKeypair) statt des Users — Owner der
+ * custodial Wallets müssen dafür kein eigenes SOL vorhalten.
  */
 import { NextResponse } from 'next/server';
 import { Keypair, PublicKey } from '@solana/web3.js';
@@ -23,6 +26,7 @@ import { decryptKey } from '@/app/lib/solanaCrypto';
 import { requireOwnWallet } from '@/app/lib/apiAuth';
 import { checkRateLimit } from '@/app/lib/rateLimit';
 import { transferSongPrintEdition } from '@/app/lib/songNft';
+import { getTreasuryKeypair } from '@/app/lib/solanaOperator';
 
 export async function POST(req: Request) {
   try {
@@ -57,6 +61,7 @@ export async function POST(req: Request) {
       mintAddress,
       ownerKeypair,
       recipientAddress: toAddress,
+      payerKeypair: getTreasuryKeypair(),
     });
 
     return NextResponse.json({ success: true });
