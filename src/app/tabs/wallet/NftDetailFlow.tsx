@@ -13,6 +13,7 @@ import {
   FaGem, FaTimes, FaPlay, FaPause, FaDownload, FaExternalLinkAlt,
   FaPaperPlane, FaCertificate,
 } from 'react-icons/fa';
+import { t, type Lang } from '../../utils/i18n';
 
 export interface OwnedNft {
   mint:       string;
@@ -53,10 +54,11 @@ export function isMusicNft(nft: OwnedNft, shopNft: ShopNftData | null): boolean 
 
 type SubView = 'detail' | 'send' | 'burn' | 'redeem';
 
-export default function NftDetailFlow({ nft, shopNft, userId, onClose, onChanged }: {
+export default function NftDetailFlow({ nft, shopNft, userId, lang = 'de', onClose, onChanged }: {
   nft:      OwnedNft;
   shopNft:  ShopNftData | null;
   userId:   string;
+  lang?:    Lang;
   onClose:  () => void;
   /** Wird nach erfolgreichem Senden/Verbrennen/Einlösen aufgerufen, damit die aufrufende Seite die Liste aktualisieren kann. */
   onChanged?: (mint: string) => void;
@@ -269,7 +271,7 @@ export default function NftDetailFlow({ nft, shopNft, userId, onClose, onChanged
 
   return isMusic
     ? <SongDetail nft={nft} shopNft={shopNft} onClose={onClose} onSend={() => setView('send')} onBurn={() => setView('burn')} />
-    : <CollectibleDetail nft={nft} onClose={onClose} onSend={() => setView('send')} onRedeem={() => setView('redeem')} onBurn={() => setView('burn')} />;
+    : <CollectibleDetail nft={nft} lang={lang} onClose={onClose} onSend={() => setView('send')} onRedeem={() => setView('redeem')} onBurn={() => setView('burn')} />;
 }
 
 // ─── Song NFT Detail ───────────────────────────────────────────────────────────
@@ -403,8 +405,9 @@ function SongDetail({ nft, shopNft, onClose, onSend, onBurn }: {
 }
 
 // ─── Collectible NFT Detail ─────────────────────────────────────────────────────
-function CollectibleDetail({ nft, onClose, onSend, onRedeem, onBurn }: {
+function CollectibleDetail({ nft, lang, onClose, onSend, onRedeem, onBurn }: {
   nft:      OwnedNft;
+  lang:     Lang;
   onClose:  () => void;
   onSend:   () => void;
   onRedeem: () => void;
@@ -494,7 +497,7 @@ function CollectibleDetail({ nft, onClose, onSend, onRedeem, onBurn }: {
 
           {nft.isDfaith && (
             <p className="text-zinc-500 text-[11px] leading-relaxed mt-3 bg-white/[0.03] border border-white/[0.06] rounded-lg px-2.5 py-2">
-              Collectibles geben dir bei Quests dieses Künstlers dauerhaft Boni (Reputation, Credits und/oder Shard-Chance). Sammle Shards, um mehrere Karten zu einer selteneren zu fusionieren.
+              {t('nft.collectibleInfo', lang)}
             </p>
           )}
 

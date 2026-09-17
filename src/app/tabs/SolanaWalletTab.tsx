@@ -13,7 +13,7 @@ import {
 import { SiSolana } from 'react-icons/si';
 import SwapWidget from './wallet/SwapWidget';
 import { useLang } from '../components/LangContext';
-import { t, tFmt } from '../utils/i18n';
+import { t, tFmt, type Lang } from '../utils/i18n';
 
 const DFAITH_MINT = process.env.NEXT_PUBLIC_SOLANA_DFAITH_TOKEN ?? '';
 
@@ -287,8 +287,9 @@ function CollectibleNftCard({ nft, onOpen }: { nft: OwnedNft; onOpen: () => void
 }
 
 // ─── Collectible NFT Detail-Modal ──────────────────────────────────────────────
-function CollectibleNftDetailModal({ nft, onClose, onSend, onRedeem, onBurn }: {
+function CollectibleNftDetailModal({ nft, lang, onClose, onSend, onRedeem, onBurn }: {
   nft:      OwnedNft;
+  lang:     Lang;
   onClose:  () => void;
   onSend:   () => void;
   onRedeem: () => void;
@@ -377,6 +378,12 @@ function CollectibleNftDetailModal({ nft, onClose, onSend, onRedeem, onBurn }: {
             {dropRate && <span className="text-zinc-500 text-[10px]">Drop {dropRate}</span>}
             {bonuses.length > 0 && <span className="text-zinc-400 text-[11px]">{bonuses.join(' · ')}</span>}
           </div>
+
+          {nft.isDfaith && (
+            <p className="text-zinc-500 text-[11px] leading-relaxed mt-3 bg-white/[0.03] border border-white/[0.06] rounded-lg px-2.5 py-2">
+              {t('nft.collectibleInfo', lang)}
+            </p>
+          )}
 
           {/* Action-Buttons */}
           <div className="flex gap-1.5 flex-wrap mt-4">
@@ -1568,6 +1575,7 @@ export default function SolanaWalletTab() {
       {collectibleDetailNft && (
         <CollectibleNftDetailModal
           nft={collectibleDetailNft}
+          lang={lang}
           onClose={() => setCollectibleDetailNft(null)}
           onSend={() => {
             const nft = collectibleDetailNft;

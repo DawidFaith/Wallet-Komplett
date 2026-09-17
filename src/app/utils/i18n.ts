@@ -266,6 +266,11 @@ const dict: Translations = {
   'profile.balance': { de: 'Guthaben', en: 'Balance', pl: 'Saldo' },
   'profile.myNfts': { de: 'Meine NFTs', en: 'My NFTs', pl: 'Moje NFT' },
   'profile.viewAll': { de: 'Alle ansehen', en: 'View all', pl: 'Zobacz wszystkie' },
+  'nft.collectibleInfo': {
+    de: 'Collectibles geben dir bei Quests dieses Künstlers dauerhaft Boni (Reputation, Credits und/oder Shard-Chance). Sammle Shards, um mehrere Karten zu einer selteneren zu fusionieren.',
+    en: 'Collectibles give you permanent bonuses (reputation, credits and/or shard chance) on this artist’s quests. Collect shards to fuse several cards into a rarer one.',
+    pl: 'Kolekcjonerki dają Ci stałe bonusy (reputacja, kredyty i/lub szansa na odłamek) w questach tego artysty. Zbieraj odłamki, by połączyć kilka kart w rzadszą.',
+  },
   'profile.artistProfile': {
     de: 'Künstler-Profil',
     en: 'Artist Profile',

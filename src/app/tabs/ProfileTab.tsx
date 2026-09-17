@@ -1299,6 +1299,7 @@ export default function ProfileTab({ language = 'de', onNavigate, onNavigateToAr
           nft={selectedNft}
           shopNft={profileShopNftsMap[selectedNft.mint] ?? null}
           userId={account.address}
+          lang={lang}
           onClose={() => setSelectedNft(null)}
           onChanged={mint => {
             setProfileNfts(prev => prev ? prev.filter(n => n.mint !== mint) : prev);
