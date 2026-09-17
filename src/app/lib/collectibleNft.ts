@@ -33,6 +33,12 @@ import type { CollectibleRarity } from './questDb/collectibles';
 
 const RPC_URL = process.env.NEXT_PUBLIC_SOLANA_RPC_URL ?? 'https://api.mainnet-beta.solana.com';
 
+// Kurzer, universeller Erklärtext auf Englisch — landet in der on-chain
+// Metadata (description) und ist damit auf jedem Marktplatz (Magic Eden,
+// Solscan, Tensor, …) für jeden sichtbar, unabhängig von App-Sprache.
+const COLLECTIBLE_UTILITY_BLURB =
+  'D.FAITH Collectibles are digital fan cards: holders get ongoing bonuses on this artist’s fan quests, and multiple cards can be fused into a rarer one.';
+
 const RARITY_LABELS: Record<CollectibleRarity, string> = {
   common:    'Common',
   uncommon:  'Uncommon',
@@ -128,7 +134,7 @@ export function buildCollectionMetadata(p: {
   return {
     name:                    p.name,
     symbol:                  'DFAITH',
-    description:             p.description,
+    description:             `${p.description}\n\n${COLLECTIBLE_UTILITY_BLURB}`,
     seller_fee_basis_points: 500,
     image,
     external_url:            'https://app.dawidfaith.de',
@@ -314,7 +320,7 @@ export function buildAssetMetadata(p: {
   return {
     name:                    `${collectionName} — ${RARITY_LABELS[rarity]}`,
     symbol:                  'DFAITH',
-    description:             `${RARITY_LABELS[rarity]} D.FAITH Collectible from the "${collectionName}" series by ${artistName}.\n\nBonuses: ${bonusLine}\n\nTradeable on secondary markets — 5% artist royalties on every resale.`,
+    description:             `${RARITY_LABELS[rarity]} D.FAITH Collectible from the "${collectionName}" series by ${artistName}. ${COLLECTIBLE_UTILITY_BLURB}\n\nBonuses: ${bonusLine}\n\nTradeable on secondary markets — 5% artist royalties on every resale.`,
     seller_fee_basis_points: 500,
     image:                   imageHttps,
     external_url:            'https://app.dawidfaith.de',
