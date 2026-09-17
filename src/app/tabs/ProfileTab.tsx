@@ -22,6 +22,14 @@ import { useLang } from '../components/LangContext';
 type SocialPlatform = 'instagram' | 'tiktok' | 'facebook';
 type AnyPlatform = SocialPlatform | 'youtube';
 
+interface ProfileNft {
+  mint:       string;
+  name:       string;
+  image:      string | null;
+  isDfaith:   boolean;
+  attributes: { trait_type: string; value: string }[];
+}
+
 interface ProfileData {
   xp: number;
   credits: number;
@@ -252,6 +260,25 @@ export default function ProfileTab({ language = 'de', onNavigate, onNavigateToAr
     }
   }, [account?.address]);
 
+  // Eigene NFTs (Songs + Collectibles + fremde) laden — Anzeige als Sammelkarten im Guthaben-Bereich
+  const [profileNfts, setProfileNfts] = useState<ProfileNft[] | null>(null);
+  const loadNfts = useCallback(async () => {
+    if (!account?.address) { setProfileNfts(null); return; }
+    try {
+      const accRes = await fetch(`/api/solana/create-account?walletAddress=${account.address}`);
+      if (!accRes.ok) return;
+      const accData = await accRes.json();
+      const solanaAddress = accData.solanaAddress as string | null;
+      if (!solanaAddress) return;
+      const nftRes = await fetch(`/api/solana/nfts?solanaAddress=${solanaAddress}`);
+      if (!nftRes.ok) return;
+      const nftData = await nftRes.json();
+      setProfileNfts(Array.isArray(nftData) ? nftData : []);
+    } catch {
+      /* Karten bleiben leer — nicht kritisch für den Rest der Seite */
+    }
+  }, [account?.address]);
+
   const loadMetaPartnerStatus = useCallback(async () => {
     if (!account?.address) return;
     try {
@@ -402,6 +429,7 @@ export default function ProfileTab({ language = 'de', onNavigate, onNavigateToAr
 
   useEffect(() => { loadProfile(); }, [loadProfile]);
   useEffect(() => { loadDfaithBalance(); }, [loadDfaithBalance]);
+  useEffect(() => { loadNfts(); }, [loadNfts]);
 
   // Der automatische Giveaway-Claim beim Login läuft parallel zum ersten
   // Profil-Fetch hier und ist manchmal noch nicht fertig, wenn dieser schon
@@ -612,6 +640,50 @@ export default function ProfileTab({ language = 'de', onNavigate, onNavigateToAr
               {claiming ? '…' : t('profile.redeem', lang)}
             </button>
           </div>
+
+          {/* ── NFTs (Sammelkarten) ── */}
+          {profileNfts && profileNfts.length > 0 && (
+            <div className="pt-1">
+              <div className="flex items-center justify-between mb-2">
+                <p className="text-amber-300/90 text-[10px] font-black uppercase tracking-[0.28em]">
+                  {t('profile.myNfts', lang)} · {profileNfts.length}
+                </p>
+                <button
+                  onClick={() => onNavigate?.('solana-wallet')}
+                  className="text-zinc-500 hover:text-zinc-300 text-[10px] font-semibold transition-colors"
+                >
+                  {t('profile.viewAll', lang)} →
+                </button>
+              </div>
+              <div className="flex gap-2.5 overflow-x-auto pb-1 scrollbar-none -mx-1 px-1">
+                {profileNfts.map(nft => (
+                  <button
+                    key={nft.mint}
+                    onClick={() => onNavigate?.('solana-wallet')}
+                    className="shrink-0 w-20 group text-left"
+                  >
+                    <div className="relative w-20 h-20 rounded-xl overflow-hidden border border-white/[0.1] bg-gradient-to-br from-violet-900/40 to-zinc-900 shadow-lg group-hover:border-amber-400/50 transition-colors">
+                      {nft.image ? (
+                        <Image src={nft.image} alt={nft.name} fill unoptimized className="object-cover" />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center">
+                          <FaStar size={20} className="text-violet-500/40" />
+                        </div>
+                      )}
+                      {!nft.isDfaith && (
+                        <span className="absolute top-1 right-1 bg-black/70 text-zinc-300 text-[7px] font-bold px-1 py-0.5 rounded">
+                          EXT
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-zinc-400 group-hover:text-white text-[10px] font-medium mt-1 line-clamp-1 transition-colors">
+                      {nft.name}
+                    </p>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Divider */}

@@ -264,6 +264,8 @@ const dict: Translations = {
   'profile.dfaithWalletLabel': { de: 'D.FAITH Wallet', en: 'D.FAITH Wallet', pl: 'D.FAITH w portfelu' },
   'profile.creditsLabel': { de: 'D.FAITH Credits', en: 'D.FAITH Credits', pl: 'Kredyty D.FAITH' },
   'profile.balance': { de: 'Guthaben', en: 'Balance', pl: 'Saldo' },
+  'profile.myNfts': { de: 'Meine NFTs', en: 'My NFTs', pl: 'Moje NFT' },
+  'profile.viewAll': { de: 'Alle ansehen', en: 'View all', pl: 'Zobacz wszystkie' },
   'profile.artistProfile': {
     de: 'Künstler-Profil',
     en: 'Artist Profile',
