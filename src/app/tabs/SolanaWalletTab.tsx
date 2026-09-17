@@ -381,12 +381,12 @@ function CollectibleNftDetailModal({ nft, lang, onClose, onSend, onRedeem, onBur
                 {rarityRaw.charAt(0).toUpperCase() + rarityRaw.slice(1)}
               </span>
             )}
-            {dropRate && <span className="text-zinc-500 text-[10px]">Drop {dropRate}</span>}
-            {bonuses.length > 0 && <span className="text-zinc-400 text-[11px]">{bonuses.join(' · ')}</span>}
+            {dropRate && <span className="text-zinc-400 text-[10px]">Drop {dropRate}</span>}
+            {bonuses.length > 0 && <span className="text-amber-300 text-[11px] font-semibold">{bonuses.join(' · ')}</span>}
           </div>
 
           {nft.isDfaith && (
-            <p className="text-zinc-500 text-[11px] leading-relaxed mt-3 bg-white/[0.03] border border-white/[0.06] rounded-lg px-2.5 py-2">
+            <p className="text-zinc-400 text-[11px] leading-relaxed mt-3 bg-white/[0.03] border border-white/[0.06] rounded-lg px-2.5 py-2">
               {t('nft.collectibleInfo', lang)}
             </p>
           )}
