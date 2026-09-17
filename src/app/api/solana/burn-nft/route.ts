@@ -105,20 +105,33 @@ export async function POST(req: NextRequest) {
       .use(mplTokenMetadata())
       .use(keypairIdentity(fromWeb3JsKeypair(holderKp)));
 
-    // 0. mpl-core Asset (Song-Editionen seit 13.07.2026, Collectibles)?
-    //    → Core-Burn, Holder bekommt das Rent-SOL zurück
+    // 0. mpl-core Asset (Song-Editionen seit 13.07.2026, Collectibles, aber
+    //    auch fremde mpl-core-NFTs anderer Projekte)? → Core-Burn, Holder
+    //    bekommt das Rent-SOL zurück.
+    //
+    //    Wichtig: Erkennung (fetchAssetV1) und Burn-Ausführung sind bewusst
+    //    getrennt. Schlägt NUR die Erkennung fehl, ist es tatsächlich kein
+    //    mpl-core-Asset → weiter zum Token-Metadata-Pfad. Schlägt aber der
+    //    Burn selbst fehl (z.B. ein Plugin verbietet ihn), darf das NICHT
+    //    stillschweigend in den Token-Metadata-Pfad durchfallen — dort gibt
+    //    es unter derselben Adresse gar kein SPL-Mint-Konto, was nur zu
+    //    einem irreführenden "[Mint] was not found"-Fehler führt statt zum
+    //    eigentlichen Burn-Fehler.
+    const coreUmi = createUmi(RPC_URL, 'confirmed')
+      .use(mplCore())
+      .use(keypairIdentity(fromWeb3JsKeypair(holderKp)));
+    let coreAsset: Awaited<ReturnType<typeof fetchAssetV1>> | null = null;
     try {
-      const coreUmi = createUmi(RPC_URL, 'confirmed')
-        .use(mplCore())
-        .use(keypairIdentity(fromWeb3JsKeypair(holderKp)));
-      const asset = await fetchAssetV1(coreUmi, umiPubkey(mintAddress));
-      const collection = asset.updateAuthority.type === 'Collection' && asset.updateAuthority.address
-        ? await fetchCollectionV1(coreUmi, asset.updateAuthority.address)
-        : undefined;
-      await coreBurn(coreUmi, { asset, collection }).sendAndConfirm(coreUmi);
-      return NextResponse.json({ success: true });
+      coreAsset = await fetchAssetV1(coreUmi, umiPubkey(mintAddress));
     } catch {
-      // Kein mpl-core Asset → Token-Metadata-Pfad unten
+      coreAsset = null; // tatsächlich kein mpl-core Asset
+    }
+    if (coreAsset) {
+      const collection = coreAsset.updateAuthority.type === 'Collection' && coreAsset.updateAuthority.address
+        ? await fetchCollectionV1(coreUmi, coreAsset.updateAuthority.address)
+        : undefined;
+      await coreBurn(coreUmi, { asset: coreAsset, collection }).sendAndConfirm(coreUmi);
+      return NextResponse.json({ success: true });
     }
 
     // 1. Versuche master_edition_mint aus DB zu holen
