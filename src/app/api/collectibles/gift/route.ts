@@ -6,17 +6,20 @@
  *                                für eine eigene Kollektion
  *                                (Query: wallet, collectionId)
  *
- * Der Eintrag bleibt als 'pending' liegen, bis sich die Person mit genau
- * dieser (von Clerk verifizierten) E-Mail registriert oder einloggt — dann
- * wird sofort ein NFT gemintet (siehe claimPendingCollectibleGiftsForEmail
- * über /api/collectibles/claim-gifts beim Login), analog zum Shop-Gifting.
+ * Gehört die E-Mail bereits einer registrierten Person mit Solana-Wallet,
+ * wird sofort gemintet und zugestellt. Sonst bleibt der Eintrag als
+ * 'pending' liegen, bis sich die Person mit genau dieser (von Clerk
+ * verifizierten) E-Mail registriert oder einloggt — dann greift
+ * claimPendingCollectibleGiftsForEmail über /api/collectibles/claim-gifts
+ * beim Login, analog zum Shop-Gifting.
  */
 import { NextRequest, NextResponse } from 'next/server';
 import { getDb } from '../../../lib/db';
-import { createCollectibleGift, listCollectibleGifts, cancelCollectibleGift } from '../../../lib/questDb';
+import { createCollectibleGift, listCollectibleGifts, cancelCollectibleGift, tryDeliverCollectibleGiftNow } from '../../../lib/questDb';
 import type { CollectibleRarity } from '../../../lib/questDb/collectibles';
 import { requireOwnWallet } from '../../../lib/apiAuth';
 import { checkRateLimit } from '../../../lib/rateLimit';
+import { resolveRegisteredWalletByEmail } from '../../../lib/resolveWalletByEmail';
 
 export const dynamic = 'force-dynamic';
 
@@ -56,8 +59,17 @@ export async function POST(req: NextRequest) {
   const collection = await loadOwnedCollection(collectionId, wallet);
   if (!collection) return NextResponse.json({ error: 'Kollektion nicht gefunden oder nicht deine Kollektion' }, { status: 404 });
 
-  const gift = await createCollectibleGift(collectionId, rarity as CollectibleRarity, email.trim().toLowerCase());
-  return NextResponse.json({ success: true, status: gift.status, giftId: gift.id });
+  const cleanEmail = email.trim().toLowerCase();
+  let gift = await createCollectibleGift(collectionId, rarity as CollectibleRarity, cleanEmail);
+
+  // Ist die Person bereits registriert (und hat ein Solana-Wallet), direkt
+  // zustellen statt auf den nächsten Login zu warten.
+  const existingWallet = await resolveRegisteredWalletByEmail(cleanEmail);
+  if (existingWallet) {
+    gift = await tryDeliverCollectibleGiftNow(gift.id, existingWallet);
+  }
+
+  return NextResponse.json({ success: true, status: gift.status, giftId: gift.id, error: gift.error ?? undefined });
 }
 
 export async function GET(req: NextRequest) {

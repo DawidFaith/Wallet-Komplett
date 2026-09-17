@@ -93,6 +93,51 @@ export async function listShopGiftsForArtist(artistWallet: string, itemId?: stri
 }
 
 /**
+ * Versucht EIN konkretes Geschenk (per ID) an ein bekanntes Wallet zuzustellen.
+ * Atomar reserviert (status → 'claiming'), damit ein doppelter Aufruf (z.B.
+ * StrictMode, zwei Tabs, oder sofortige + login-basierte Zustellung im
+ * gleichen Moment) dasselbe Geschenk nie zweimal mintet.
+ */
+async function claimOneShopGift(giftId: string, recipientWallet: string): Promise<void> {
+  const sql = getDb();
+  const wallet = recipientWallet.toLowerCase();
+
+  const claimed = await sql`
+    UPDATE shop_gifts SET status = 'claiming' WHERE id = ${giftId} AND status = 'pending' RETURNING item_id
+  `;
+  if (!claimed.length) return;
+  const itemId = claimed[0].item_id as string;
+
+  try {
+    const result = await grantShopItemToWallet(itemId, wallet);
+    await sql`
+      UPDATE shop_gifts
+      SET status = 'claimed', claimed_wallet = ${wallet},
+          nft_mint_address = ${result.nftMintAddress}, edition_number = ${result.editionNumber},
+          claimed_at = NOW()
+      WHERE id = ${giftId}
+    `;
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : String(e);
+    await sql`UPDATE shop_gifts SET status = 'failed', error = ${msg} WHERE id = ${giftId}`;
+  }
+}
+
+/**
+ * Wird direkt beim Anlegen aufgerufen, wenn die E-Mail bereits einem
+ * registrierten Wallet mit Solana-Account zugeordnet werden konnte (siehe
+ * /api/shop/gift) — liefert sofort aus, statt unnötig auf den nächsten Login
+ * zu warten.
+ */
+export async function tryDeliverShopGiftNow(giftId: string, recipientWallet: string): Promise<ShopGift> {
+  await ensureTables();
+  await claimOneShopGift(giftId, recipientWallet);
+  const sql = getDb();
+  const rows = await sql`SELECT * FROM shop_gifts WHERE id = ${giftId} LIMIT 1`;
+  return rowToGift(rows[0]);
+}
+
+/**
  * Wird beim Login aufgerufen (siehe home/page.tsx, analog zu
  * claimPendingGiveawayEntriesForEmail) — vergibt alle offenen Geschenke, die
  * auf die jetzt bekannte E-Mail warten, an das frisch verknüpfte Wallet.
@@ -104,27 +149,8 @@ export async function claimPendingShopGiftsForEmail(walletAddress: string, email
   const cleanEmail = email.trim().toLowerCase();
   if (!cleanEmail) return;
 
-  const rows = await sql`SELECT * FROM shop_gifts WHERE email = ${cleanEmail} AND status = 'pending'`;
+  const rows = await sql`SELECT id FROM shop_gifts WHERE email = ${cleanEmail} AND status = 'pending'`;
   for (const r of rows) {
-    // Atomar reservieren, damit ein doppelter Login-Effekt (z.B. StrictMode /
-    // zwei Tabs) dasselbe Geschenk nicht zweimal mintet.
-    const claimed = await sql`
-      UPDATE shop_gifts SET status = 'claiming' WHERE id = ${r.id} AND status = 'pending' RETURNING id
-    `;
-    if (!claimed.length) continue;
-
-    try {
-      const result = await grantShopItemToWallet(r.item_id as string, wallet);
-      await sql`
-        UPDATE shop_gifts
-        SET status = 'claimed', claimed_wallet = ${wallet},
-            nft_mint_address = ${result.nftMintAddress}, edition_number = ${result.editionNumber},
-            claimed_at = NOW()
-        WHERE id = ${r.id}
-      `;
-    } catch (e) {
-      const msg = e instanceof Error ? e.message : String(e);
-      await sql`UPDATE shop_gifts SET status = 'failed', error = ${msg} WHERE id = ${r.id}`;
-    }
+    await claimOneShopGift(r.id as string, wallet);
   }
 }

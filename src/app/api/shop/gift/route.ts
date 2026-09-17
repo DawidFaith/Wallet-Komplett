@@ -4,16 +4,18 @@
  * GET  /api/shop/gift  – Liste der bisher verschenkten Editionen für ein Item
  *                        (Query: wallet, itemId)
  *
- * Der Eintrag bleibt als 'pending' liegen, bis sich die Person mit genau
- * dieser (von Clerk verifizierten) E-Mail registriert oder einloggt — dann
- * greift claimPendingShopGiftsForEmail über /api/shop/claim-gifts beim Login,
- * exakt analog zum bestehenden Giveaway-claim-by-email-Muster.
+ * Gehört die E-Mail bereits einer registrierten Person mit Solana-Wallet,
+ * wird sofort zugestellt. Sonst bleibt der Eintrag als 'pending' liegen, bis
+ * sich die Person mit genau dieser (von Clerk verifizierten) E-Mail
+ * registriert oder einloggt — dann greift claimPendingShopGiftsForEmail über
+ * /api/shop/claim-gifts beim Login, analog zum Giveaway-claim-by-email-Muster.
  */
 import { NextRequest, NextResponse } from 'next/server';
 import { getDb } from '../../../lib/db';
-import { createShopGift, listShopGiftsForArtist, cancelShopGift } from '../../../lib/questDb';
+import { createShopGift, listShopGiftsForArtist, cancelShopGift, tryDeliverShopGiftNow } from '../../../lib/questDb';
 import { requireOwnWallet } from '../../../lib/apiAuth';
 import { checkRateLimit } from '../../../lib/rateLimit';
+import { resolveRegisteredWalletByEmail } from '../../../lib/resolveWalletByEmail';
 
 export const dynamic = 'force-dynamic';
 
@@ -47,9 +49,16 @@ export async function POST(req: NextRequest) {
   if (!item) return NextResponse.json({ error: 'Item nicht gefunden oder nicht dein Item' }, { status: 404 });
 
   const cleanEmail = email.trim().toLowerCase();
-  const gift = await createShopGift(itemId, wallet.toLowerCase(), cleanEmail);
+  let gift = await createShopGift(itemId, wallet.toLowerCase(), cleanEmail);
 
-  return NextResponse.json({ success: true, status: gift.status, giftId: gift.id });
+  // Ist die Person bereits registriert (und hat ein Solana-Wallet), direkt
+  // zustellen statt auf den nächsten Login zu warten.
+  const existingWallet = await resolveRegisteredWalletByEmail(cleanEmail);
+  if (existingWallet) {
+    gift = await tryDeliverShopGiftNow(gift.id, existingWallet);
+  }
+
+  return NextResponse.json({ success: true, status: gift.status, giftId: gift.id, error: gift.error ?? undefined });
 }
 
 export async function GET(req: NextRequest) {

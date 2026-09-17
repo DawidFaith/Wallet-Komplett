@@ -123,6 +123,50 @@ export async function listCollectibleGifts(filter: { artistWallet?: string; coll
 }
 
 /**
+ * Versucht EIN konkretes Geschenk (per ID) an ein bekanntes Wallet zuzustellen.
+ * Atomar reserviert (status → 'claiming'), damit ein doppelter Aufruf (z.B.
+ * sofortige + login-basierte Zustellung im gleichen Moment) dasselbe
+ * Geschenk nie zweimal mintet.
+ */
+async function claimOneCollectibleGift(giftId: string, recipientWallet: string): Promise<void> {
+  const sql = getDb();
+  const wallet = recipientWallet.toLowerCase();
+
+  const claimed = await sql`
+    UPDATE collectible_gifts SET status = 'claiming' WHERE id = ${giftId} AND status = 'pending' RETURNING collection_id, rarity
+  `;
+  if (!claimed.length) return;
+  const collectionId = claimed[0].collection_id as string;
+  const rarity = claimed[0].rarity as CollectibleRarity;
+
+  try {
+    const result = await grantCollectibleAsNftToWallet(collectionId, rarity, wallet);
+    await sql`
+      UPDATE collectible_gifts
+      SET status = 'claimed', claimed_wallet = ${wallet}, nft_mint_address = ${result.mintAddress}, claimed_at = NOW()
+      WHERE id = ${giftId}
+    `;
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : String(e);
+    await sql`UPDATE collectible_gifts SET status = 'failed', error = ${msg} WHERE id = ${giftId}`;
+  }
+}
+
+/**
+ * Wird direkt beim Anlegen aufgerufen, wenn die E-Mail bereits einem
+ * registrierten Wallet mit Solana-Account zugeordnet werden konnte (siehe
+ * /api/collectibles/gift) — liefert sofort aus, statt unnötig auf den
+ * nächsten Login zu warten.
+ */
+export async function tryDeliverCollectibleGiftNow(giftId: string, recipientWallet: string): Promise<CollectibleGift> {
+  await ensureTables();
+  await claimOneCollectibleGift(giftId, recipientWallet);
+  const sql = getDb();
+  const rows = await sql`SELECT * FROM collectible_gifts WHERE id = ${giftId} LIMIT 1`;
+  return rowToGift(rows[0]);
+}
+
+/**
  * Wird beim Login aufgerufen (siehe home/page.tsx) — mintet alle offenen
  * Collectible-Geschenke, die auf die jetzt bekannte E-Mail warten, direkt als
  * NFT an das frisch verknüpfte Wallet.
@@ -134,25 +178,8 @@ export async function claimPendingCollectibleGiftsForEmail(walletAddress: string
   const cleanEmail = email.trim().toLowerCase();
   if (!cleanEmail) return;
 
-  const rows = await sql`SELECT * FROM collectible_gifts WHERE email = ${cleanEmail} AND status = 'pending'`;
+  const rows = await sql`SELECT id FROM collectible_gifts WHERE email = ${cleanEmail} AND status = 'pending'`;
   for (const r of rows) {
-    // Atomar reservieren, damit ein doppelter Login-Effekt dasselbe Geschenk
-    // nicht zweimal mintet.
-    const claimed = await sql`
-      UPDATE collectible_gifts SET status = 'claiming' WHERE id = ${r.id} AND status = 'pending' RETURNING id
-    `;
-    if (!claimed.length) continue;
-
-    try {
-      const result = await grantCollectibleAsNftToWallet(r.collection_id as string, r.rarity as CollectibleRarity, wallet);
-      await sql`
-        UPDATE collectible_gifts
-        SET status = 'claimed', claimed_wallet = ${wallet}, nft_mint_address = ${result.mintAddress}, claimed_at = NOW()
-        WHERE id = ${r.id}
-      `;
-    } catch (e) {
-      const msg = e instanceof Error ? e.message : String(e);
-      await sql`UPDATE collectible_gifts SET status = 'failed', error = ${msg} WHERE id = ${r.id}`;
-    }
+    await claimOneCollectibleGift(r.id as string, wallet);
   }
 }
