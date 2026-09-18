@@ -15,8 +15,19 @@ const LangContext = createContext<LangContextValue>({ lang: 'de', setLang: () =>
 export function LangProvider({ children }: { children: React.ReactNode }) {
   const [lang, setLangState] = useState<Lang>('de');
 
+  // ?lang= aus der URL hat Vorrang vor dem gespeicherten Wert — ein Link mit
+  // z.B. ?lang=pl landet so sofort in der richtigen Sprache, egal auf
+  // welcher Seite der App (Startseite, /home, Gewinnspiel-Links, …), auch
+  // beim allerersten Besuch bevor localStorage überhaupt existiert.
   useEffect(() => {
-    const saved = typeof window !== 'undefined' ? (localStorage.getItem(LANG_KEY) as Lang | null) : null;
+    if (typeof window === 'undefined') return;
+    const urlLang = new URLSearchParams(window.location.search).get('lang') as Lang | null;
+    if (urlLang && ['de', 'en', 'pl'].includes(urlLang)) {
+      setLangState(urlLang);
+      localStorage.setItem(LANG_KEY, urlLang);
+      return;
+    }
+    const saved = localStorage.getItem(LANG_KEY) as Lang | null;
     if (saved && ['de', 'en', 'pl'].includes(saved)) setLangState(saved);
   }, []);
 

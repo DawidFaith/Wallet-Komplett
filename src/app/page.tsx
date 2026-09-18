@@ -32,12 +32,22 @@ export default function LandingPage() {
   const [language, setLanguage] = useState<Lang>('de');
   const [langOpen, setLangOpen] = useState(false);
 
+  // ?lang= aus der URL hat Vorrang vor dem gespeicherten Wert — so landet
+  // man über einen Link mit z.B. ?lang=pl sofort in der richtigen Sprache,
+  // auch beim allerersten Besuch (bevor localStorage überhaupt existiert).
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const saved = localStorage.getItem(LANG_KEY) as Lang | null;
-      if (saved && ['de', 'en', 'pl'].includes(saved)) setLanguage(saved);
+    if (typeof window === 'undefined') return;
+    const params  = new URLSearchParams(window.location.search);
+    const urlLang = params.get('lang') as Lang | null;
+    if (urlLang && ['de', 'en', 'pl'].includes(urlLang)) {
+      setLanguage(urlLang);
+      setLangCtx(urlLang);
+      localStorage.setItem(LANG_KEY, urlLang);
+      return;
     }
-  }, []);
+    const saved = localStorage.getItem(LANG_KEY) as Lang | null;
+    if (saved && ['de', 'en', 'pl'].includes(saved)) setLanguage(saved);
+  }, [setLangCtx]);
 
   const handleSetLanguage = (l: Lang) => {
     setLanguage(l);
@@ -128,7 +138,7 @@ export default function LandingPage() {
         </div>
         <div className="flex items-center gap-3">
           <a
-            href="https://dfaith.dawidfaith.de/"
+            href={`https://dfaith.dawidfaith.de/?lang=${language}`}
             target="_blank"
             rel="noopener noreferrer"
             className="text-[11px] font-bold tracking-[0.2em] uppercase text-zinc-400 hover:text-amber-400 transition-colors"
