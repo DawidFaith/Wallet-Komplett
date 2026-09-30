@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { vercelBlobCache } from '../../lib/vercelBlobCache';
+import { translationCache } from '../../lib/translationCache';
 
 export interface TranslateResponse {
   translations: Array<{
@@ -7,12 +7,12 @@ export interface TranslateResponse {
     text: string;
   }>;
   cacheHit?: boolean;
-  source?: 'vercel_blob' | 'deepl_api' | 'direct';
+  source?: 'db_cache' | 'deepl_api' | 'direct';
 }
 
 export async function POST(request: NextRequest) {
   const startTime = Date.now();
-  
+
   try {
     const { text, targetLang } = await request.json();
 
@@ -29,33 +29,30 @@ export async function POST(request: NextRequest) {
     // Wenn Zielsprache Deutsch ist, Original zurückgeben
     if (normalizedLang === 'DE') {
       return NextResponse.json({
-        translations: [{ 
-          detected_source_language: 'DE', 
-          text: text 
+        translations: [{
+          detected_source_language: 'DE',
+          text: text
         }],
         cacheHit: true,
         source: 'direct'
       } as TranslateResponse);
     }
 
-    // 1. Prüfe Vercel Blob Cache (immer versuchen - Token ist verfügbar)
+    // 1. Prüfe DB-Cache
     try {
-      console.log(`🔍 Checking blob cache for: "${text}" -> ${normalizedLang} [Length: ${text.length}, CharCodes: ${text.split('').map((c: string) => c.charCodeAt(0)).join(',')}]`);
-      const cachedTranslation = await vercelBlobCache.getTranslation(text, normalizedLang);
-      
+      const cachedTranslation = await translationCache.getTranslation(text, normalizedLang);
+
       if (cachedTranslation) {
-        console.log(`🎯 Blob cache HIT for "${text}" -> "${cachedTranslation}" (${Date.now() - startTime}ms)`);
-        
+        console.log(`🎯 Cache HIT for "${text}" -> "${cachedTranslation}" (${Date.now() - startTime}ms)`);
+
         return NextResponse.json({
-          translations: [{ 
-            detected_source_language: 'DE', 
-            text: cachedTranslation 
+          translations: [{
+            detected_source_language: 'DE',
+            text: cachedTranslation
           }],
           cacheHit: true,
-          source: 'vercel_blob'
+          source: 'db_cache'
         } as TranslateResponse);
-      } else {
-        console.log(`🔍 Blob cache MISS for: "${text}"`);
       }
     } catch (cacheError) {
       console.warn('⚠️ Cache access failed, continuing with DeepL API:', cacheError);
@@ -99,11 +96,9 @@ export async function POST(request: NextRequest) {
     const data = await response.json();
     const translatedText = data.translations[0]?.text || text;
 
-    // 3. Speichere im Vercel Blob Cache (immer versuchen)
+    // 3. Speichere im DB-Cache
     try {
-      console.log(`💾 Saving to blob cache: "${text}" -> "${translatedText}"`);
-      await vercelBlobCache.setTranslation(text, normalizedLang, translatedText);
-      console.log(`✅ Successfully saved to blob cache`);
+      await translationCache.setTranslation(text, normalizedLang, translatedText);
     } catch (cacheError) {
       console.warn('⚠️ Failed to save to cache, but translation was successful:', cacheError);
     }
@@ -115,7 +110,7 @@ export async function POST(request: NextRequest) {
       cacheHit: false,
       source: 'deepl_api'
     } as TranslateResponse);
-    
+
   } catch (error) {
     console.error('Translation API error:', error);
     return NextResponse.json(
@@ -124,4 +119,3 @@ export async function POST(request: NextRequest) {
     );
   }
 }
-// Force redeploy for blob cache fix - Thu Oct  9 07:52:05 UTC 2025

@@ -1,6 +1,6 @@
-// Batch Translation API mit Vercel Blob Cache
+// Batch Translation API mit DB-Cache
 import { NextRequest, NextResponse } from 'next/server';
-import { vercelBlobCache } from '../../lib/vercelBlobCache';
+import { translationCache } from '../../lib/translationCache';
 
 export interface BatchTranslationRequest {
   texts: string[];
@@ -54,7 +54,7 @@ export async function POST(request: NextRequest) {
     // 1. Prüfe Cache für alle Texte
     for (let i = 0; i < texts.length; i++) {
       const text = texts[i];
-      const cachedTranslation = await vercelBlobCache.getTranslation(text, normalizedLang);
+      const cachedTranslation = await translationCache.getTranslation(text, normalizedLang);
       
       if (cachedTranslation) {
         translations[i] = cachedTranslation;
@@ -99,7 +99,7 @@ export async function POST(request: NextRequest) {
           translations[originalIndex] = translatedText;
           
           // Speichere im Cache
-          await vercelBlobCache.setTranslation(originalText, normalizedLang, translatedText);
+          await translationCache.setTranslation(originalText, normalizedLang, translatedText);
         }
 
       } catch (error) {

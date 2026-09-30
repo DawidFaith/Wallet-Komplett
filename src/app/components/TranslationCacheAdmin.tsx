@@ -11,7 +11,6 @@ interface TranslationStats {
   cacheHitRate: number;
   languageDistribution: Record<string, number>;
   estimatedCostSavings: number;
-  environment: 'vercel' | 'local';
   lastUpdated?: string;
 }
 
@@ -99,9 +98,7 @@ export default function TranslationCacheAdmin() {
         <h2 className="text-2xl font-bold mb-6 flex items-center">
           <span className="mr-2">📊</span>
           Translation Cache Statistiken
-          <span className="ml-2 text-sm font-normal text-gray-500">
-            ({stats?.environment === 'vercel' ? '☁️ Vercel Blob' : '💻 Lokal'})
-          </span>
+          <span className="ml-2 text-sm font-normal text-gray-500">(🗄️ Postgres)</span>
         </h2>
 
         {stats && (
@@ -149,7 +146,7 @@ export default function TranslationCacheAdmin() {
       </Card>
 
       {/* Sprachverteilung */}
-      {stats && stats.environment === 'vercel' && (
+      {stats && (
         <Card className="p-6">
           <h3 className="text-xl font-bold mb-4">🌍 Sprachverteilung</h3>
           <div className="space-y-2">
@@ -183,8 +180,8 @@ export default function TranslationCacheAdmin() {
         </Card>
       )}
 
-      {/* Cache-Management (nur für Vercel) */}
-      {stats && stats.environment === 'vercel' && (
+      {/* Cache-Management */}
+      {stats && (
         <Card className="p-6">
           <h3 className="text-xl font-bold mb-4">⚙️ Cache-Verwaltung</h3>
           
@@ -230,27 +227,6 @@ export default function TranslationCacheAdmin() {
               {message}
             </div>
           )}
-        </Card>
-      )}
-
-      {/* Lokale Entwicklung Hinweis */}
-      {stats && stats.environment === 'local' && (
-        <Card className="p-6 bg-yellow-50 border-yellow-200">
-          <div className="flex items-start">
-            <span className="text-2xl mr-3">💻</span>
-            <div>
-              <h3 className="text-lg font-bold text-yellow-800 mb-2">
-                Lokale Entwicklungsumgebung
-              </h3>
-              <p className="text-yellow-700">
-                Das globale Vercel Blob Caching ist nur in der Vercel-Umgebung verfügbar. 
-                In der lokalen Entwicklung wird ein temporärer lokaler Cache verwendet.
-              </p>
-              <p className="text-yellow-700 mt-2">
-                Nach dem Deployment zu Vercel wird automatisch das globale Caching aktiviert.
-              </p>
-            </div>
-          </div>
         </Card>
       )}
     </div>
