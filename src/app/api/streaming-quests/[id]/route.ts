@@ -12,6 +12,7 @@ import { getDb } from '../../../lib/db';
 import { addDfaithCredits, addUserReputation } from '../../../lib/questDb';
 import { addShard, getCollectiblesShardBonus } from '../../../lib/questDb/collectibles';
 import { getUserXp, xpToLevel } from '../../../lib/questDb/profile';
+import { deleteBlobUrls } from '../../../lib/blobCleanup';
 
 export const dynamic = 'force-dynamic';
 export const fetchCache = 'force-no-store';
@@ -286,10 +287,18 @@ export async function DELETE(
     return NextResponse.json({ error: 'Nur abgeschlossene, abgelaufene oder stornierte Quests können gelöscht werden' }, { status: 400 });
   }
 
+  // Hochgeladene Screenshots einsammeln, bevor die Zeilen weg sind
+  const updateRows = await sql`
+    SELECT screenshot_url FROM streaming_quest_updates WHERE quest_id = ${params.id} AND screenshot_url IS NOT NULL
+  `;
+  const screenshotUrls = updateRows.map(r => r.screenshot_url as string | null);
+
   // Kaskadierende Löschung
   await sql`DELETE FROM streaming_quest_updates     WHERE quest_id = ${params.id}`;
   await sql`DELETE FROM streaming_quest_participants WHERE quest_id = ${params.id}`;
   await sql`DELETE FROM streaming_quests             WHERE id       = ${params.id}`;
+
+  await deleteBlobUrls([...screenshotUrls, quest.proof_url as string | null]);
 
   return NextResponse.json({ success: true });
 }

@@ -8,6 +8,7 @@ import {
   updateConcertEventStatus,
   deleteConcertEvent,
 } from '@/app/lib/questDb';
+import { deleteBlobUrls } from '@/app/lib/blobCleanup';
 
 /** GET /api/concerts?artistWallet=...&manage=true */
 export async function GET(req: NextRequest) {
@@ -109,6 +110,7 @@ export async function DELETE(req: NextRequest) {
     if (!deleted) {
       return NextResponse.json({ error: 'Event nicht gefunden oder noch aktiv (erst beenden)' }, { status: 400 });
     }
+    await deleteBlobUrls([deleted.imageUrl]);
     return NextResponse.json({ success: true });
   } catch (e) {
     return NextResponse.json({ error: e instanceof Error ? e.message : 'Fehler' }, { status: 500 });

@@ -165,16 +165,16 @@ export async function updateConcertEventStatus(eventId: string, artistWallet: st
 }
 
 /** Beendetes Event endgültig löschen (inkl. Checkins). Nur eigene, bereits beendete Events. */
-export async function deleteConcertEvent(eventId: string, artistWallet: string): Promise<boolean> {
+export async function deleteConcertEvent(eventId: string, artistWallet: string): Promise<{ imageUrl: string | null } | null> {
   const sql = getDb();
   const rows = await sql`
     DELETE FROM concert_events
     WHERE id = ${eventId} AND artist_wallet = ${artistWallet.toLowerCase()} AND status != 'active'
-    RETURNING id
+    RETURNING image_url
   `;
-  if (rows.length === 0) return false;
+  if (rows.length === 0) return null;
   await sql`DELETE FROM concert_checkins WHERE event_id = ${eventId}`;
-  return true;
+  return { imageUrl: (rows[0].image_url as string | null) ?? null };
 }
 
 /** Fan checkt sich ein */

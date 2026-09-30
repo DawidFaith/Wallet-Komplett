@@ -66,16 +66,18 @@ export async function uploadProfileImageToBlob(
               : contentType.includes('webp') ? 'webp'
               : 'jpg';
 
-    // Eindeutiger Dateiname: platform/identifier-timestamp.ext
-    const timestamp = Date.now();
+    // Stabiler Dateiname OHNE Zeitstempel: jeder erneute Sync desselben
+    // Accounts überschreibt dieselbe Datei, statt bei jedem Aufruf eine neue
+    // anzuhäufen (vorher: unbegrenztes Wachstum, alte Versionen nie gelöscht).
     const sanitizedId = identifier.replace(/[^a-zA-Z0-9_-]/g, '_').toLowerCase();
-    const filename = `profile-images/${platform}/${sanitizedId}-${timestamp}.${ext}`;
+    const filename = `profile-images/${platform}/${sanitizedId}.${ext}`;
 
     // Upload zu Vercel Blob
     const blob = await put(filename, buffer, {
       access: 'public',
       contentType,
       addRandomSuffix: false,
+      allowOverwrite: true,
     });
 
     console.log(`✅ Uploaded profile image to blob: ${blob.url}`);

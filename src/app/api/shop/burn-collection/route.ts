@@ -19,6 +19,7 @@ import { getDb } from '../../../lib/db';
 import { decryptKey } from '../../../lib/solanaCrypto';
 import { requireOwnWallet } from '../../../lib/apiAuth';
 import { checkRateLimit } from '../../../lib/rateLimit';
+import { deleteBlobUrls } from '../../../lib/blobCleanup';
 
 export const dynamic = 'force-dynamic';
 export const maxDuration = 60;
@@ -39,7 +40,8 @@ export async function POST(req: NextRequest) {
 
     const sql = getDb();
     const rows = await sql`
-      SELECT si.master_edition_mint, si.edition_count, sa.solana_private_key
+      SELECT si.master_edition_mint, si.edition_count, si.image_url, si.content_url, si.audio_download_url,
+             sa.solana_private_key
       FROM shop_items si
       LEFT JOIN solana_accounts sa ON sa.wallet_address = si.artist_wallet
       WHERE si.id = ${itemId} AND si.artist_wallet = ${wallet.toLowerCase()}
@@ -48,7 +50,10 @@ export async function POST(req: NextRequest) {
     if (!rows.length) {
       return NextResponse.json({ error: 'Item nicht gefunden oder keine Berechtigung' }, { status: 404 });
     }
-    const { master_edition_mint: collectionMint, edition_count: editionCount, solana_private_key: encKey } = rows[0];
+    const {
+      master_edition_mint: collectionMint, edition_count: editionCount, solana_private_key: encKey,
+      image_url: imageUrl, content_url: contentUrl, audio_download_url: audioDownloadUrl,
+    } = rows[0];
 
     if (Number(editionCount) > 0) {
       return NextResponse.json({
@@ -80,6 +85,10 @@ export async function POST(req: NextRequest) {
 
     await sql`DELETE FROM shop_purchases WHERE item_id = ${itemId}`;
     await sql`DELETE FROM shop_items WHERE id = ${itemId}`;
+
+    // Nichts verkauft, Item unwiderruflich weg — zugehörige Dateien (Cover,
+    // Audio, MP3-Download) können jetzt gefahrlos aus dem Blob-Speicher.
+    await deleteBlobUrls([imageUrl as string | null, contentUrl as string | null, audioDownloadUrl as string | null]);
 
     return NextResponse.json({ success: true, burned: !!collectionMint });
   } catch (err) {

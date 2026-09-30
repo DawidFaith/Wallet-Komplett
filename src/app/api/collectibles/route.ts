@@ -4,6 +4,7 @@ import {
   updateCollectibleCollection,
   getCollectionsByArtist,
   getAllActiveCollections,
+  getCollectionById,
   getUserShards,
   getAllUserShards,
   getUserCollectibles,
@@ -15,6 +16,7 @@ import { getDb } from '../../lib/db';
 import { decryptKey } from '../../lib/solanaCrypto';
 import { requireOwnWallet } from '../../lib/apiAuth';
 import { checkRateLimit } from '../../lib/rateLimit';
+import { deleteBlobUrls } from '../../lib/blobCleanup';
 import { Keypair } from '@solana/web3.js';
 import bs58 from 'bs58';
 
@@ -236,6 +238,7 @@ export async function PATCH(req: NextRequest) {
 
   // Blob-URL direkt speichern (kein Arweave-Upload hier nötig)
   const patchImageUrl = body.imageUrl;
+  const before = patchImageUrl?.trim() ? await getCollectionById(id.trim()) : null;
 
   try {
     const updated = await updateCollectibleCollection(id.trim(), artistWallet.trim(), {
@@ -254,6 +257,11 @@ export async function PATCH(req: NextRequest) {
       primaryBonus:          (['rep', 'credits', 'shard'].includes(body.primaryBonus ?? '') ? body.primaryBonus as 'rep' | 'credits' | 'shard' : undefined),
     });
     if (!updated) return NextResponse.json({ error: 'Kollektion nicht gefunden oder keine Berechtigung' }, { status: 403 });
+
+    if (before && before.imageUrl && before.imageUrl !== patchImageUrl?.trim()) {
+      await deleteBlobUrls([before.imageUrl]);
+    }
+
     return NextResponse.json({ success: true });
   } catch (e) {
     console.error('collectibles PATCH Fehler:', e instanceof Error ? e.message : String(e));

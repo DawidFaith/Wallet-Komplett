@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getDb } from '../../../lib/db';
 import { addShard, getAllActiveCollections } from '../../../lib/questDb/collectibles';
 import { createCollectibleGift, listCollectibleGifts } from '../../../lib/questDb/collectibleGifts';
+import { deleteBlobUrls } from '../../../lib/blobCleanup';
 import type { CollectibleRarity } from '../../../lib/questDb/collectibles';
 
 export const dynamic = 'force-dynamic';
@@ -123,8 +124,9 @@ export async function DELETE(req: NextRequest) {
     const deletedCollections = await sql`
       DELETE FROM collectible_collections
       WHERE nft_collection_mint IS NULL
-      RETURNING id, name
+      RETURNING id, name, image_url
     `;
+    await deleteBlobUrls(deletedCollections.map(r => r.image_url as string | null));
 
     return NextResponse.json({
       success: true,

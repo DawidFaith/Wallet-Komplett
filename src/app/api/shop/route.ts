@@ -8,6 +8,7 @@ import { getDb } from '../../lib/db';
 import { mintSongMasterEdition } from '../../lib/songNft';
 import { requireOwnWallet } from '../../lib/apiAuth';
 import { checkRateLimit } from '../../lib/rateLimit';
+import { deleteBlobUrls } from '../../lib/blobCleanup';
 
 export const dynamic = 'force-dynamic';
 
@@ -275,6 +276,18 @@ export async function PATCH(req: NextRequest) {
   const sql = getDb();
   await ensureShopItemColumns(sql);
 
+  // Alte Datei-URLs merken, damit ersetzte Dateien danach aus dem Blob-Speicher
+  // gelöscht werden können (sonst bleibt jede überschriebene Version für immer liegen).
+  const beforeRows = await sql`
+    SELECT image_url, content_url, audio_download_url FROM shop_items
+    WHERE id = ${itemId} AND artist_wallet = ${wallet.toLowerCase()}
+    LIMIT 1
+  `;
+  if (!beforeRows.length) {
+    return NextResponse.json({ error: 'Item nicht gefunden oder keine Berechtigung' }, { status: 404 });
+  }
+  const before = beforeRows[0] as { image_url: string | null; content_url: string | null; audio_download_url: string | null };
+
   // Nur eigene Items bearbeiten
   const rows = await sql`
     UPDATE shop_items
@@ -301,6 +314,13 @@ export async function PATCH(req: NextRequest) {
   if (!rows.length) {
     return NextResponse.json({ error: 'Item nicht gefunden oder keine Berechtigung' }, { status: 404 });
   }
+
+  const replacedUrls = [
+    imageUrl?.trim() && imageUrl.trim() !== before.image_url ? before.image_url : null,
+    contentUrl?.trim() && contentUrl.trim() !== before.content_url ? before.content_url : null,
+    audioDownloadUrl !== undefined && (audioDownloadUrl?.trim() || null) !== before.audio_download_url ? before.audio_download_url : null,
+  ];
+  await deleteBlobUrls(replacedUrls);
 
   return NextResponse.json({ success: true });
 }
