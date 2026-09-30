@@ -1,22 +1,22 @@
 /**
- * GET /api/admin/shop-blob-audit
+ * GET  /api/admin/shop-blob-audit          — nur anzeigen, löscht nichts
+ * POST /api/admin/shop-blob-audit          — anzeigen UND die verwaisten Dateien löschen
  * Header: x-admin-secret
  *
  * Vergleicht alle Dateien unter shop/ im Blob-Speicher mit den aktuell in
  * shop_items referenzierten URLs (image_url, content_url,
  * audio_download_url — über ALLE Items, auch inaktive, da deren Inhalt für
- * Käufer weiter erreichbar bleiben muss). Rein lesend, löscht nichts.
+ * Käufer weiter erreichbar bleiben muss). Referenziert nirgends ⇒ kann von
+ * keiner Funktion der App mehr angezeigt werden ⇒ gefahrlos löschbar
+ * (typischerweise abgebrochene/ersetzte Uploads im Erstellen/Bearbeiten-
+ * Formular, die schon beim Datei-Auswählen hochgeladen werden, bevor
+ * überhaupt gespeichert wird).
  */
 import { NextRequest, NextResponse } from 'next/server';
-import { list } from '@vercel/blob';
+import { list, del } from '@vercel/blob';
 import { getDb } from '../../../lib/db';
 
-export async function GET(req: NextRequest) {
-  const secret = req.headers.get('x-admin-secret');
-  if (!secret || secret !== process.env.MIGRATION_SECRET) {
-    return NextResponse.json({ error: 'Nicht autorisiert' }, { status: 401 });
-  }
-
+async function findOrphanedShopBlobs() {
   const sql = getDb();
   const rows = await sql`SELECT image_url, content_url, audio_download_url FROM shop_items`;
   const referenced = new Set<string>();
@@ -39,18 +39,48 @@ export async function GET(req: NextRequest) {
   }
 
   const orphaned = allBlobs.filter(b => !referenced.has(b.url));
-  const orphanedSizeMB = Math.round((orphaned.reduce((s, b) => s + b.size, 0) / 1024 / 1024) * 100) / 100;
-  const totalSizeMB = Math.round((allBlobs.reduce((s, b) => s + b.size, 0) / 1024 / 1024) * 100) / 100;
+  return { allBlobs, referenced, orphaned };
+}
+
+const toMB = (bytes: number) => Math.round((bytes / 1024 / 1024) * 100) / 100;
+
+export async function GET(req: NextRequest) {
+  const secret = req.headers.get('x-admin-secret');
+  if (!secret || secret !== process.env.MIGRATION_SECRET) {
+    return NextResponse.json({ error: 'Nicht autorisiert' }, { status: 401 });
+  }
+
+  const { allBlobs, referenced, orphaned } = await findOrphanedShopBlobs();
 
   return NextResponse.json({
     success: true,
     totalFiles: allBlobs.length,
-    totalSizeMB,
+    totalSizeMB: toMB(allBlobs.reduce((s, b) => s + b.size, 0)),
     referencedInDb: referenced.size,
     orphanedCount: orphaned.length,
-    orphanedSizeMB,
+    orphanedSizeMB: toMB(orphaned.reduce((s, b) => s + b.size, 0)),
     orphanedFiles: orphaned
       .sort((a, b) => b.size - a.size)
-      .map(b => ({ pathname: b.pathname, sizeMB: Math.round((b.size / 1024 / 1024) * 100) / 100, uploadedAt: b.uploadedAt })),
+      .map(b => ({ pathname: b.pathname, sizeMB: toMB(b.size), uploadedAt: b.uploadedAt })),
+  });
+}
+
+export async function POST(req: NextRequest) {
+  const secret = req.headers.get('x-admin-secret');
+  if (!secret || secret !== process.env.MIGRATION_SECRET) {
+    return NextResponse.json({ error: 'Nicht autorisiert' }, { status: 401 });
+  }
+
+  const { orphaned } = await findOrphanedShopBlobs();
+  const urls = orphaned.map(b => b.url);
+
+  for (let i = 0; i < urls.length; i += 100) {
+    await del(urls.slice(i, i + 100));
+  }
+
+  return NextResponse.json({
+    success: true,
+    deleted: urls.length,
+    deletedSizeMB: toMB(orphaned.reduce((s, b) => s + b.size, 0)),
   });
 }
